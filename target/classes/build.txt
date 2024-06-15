@@ -1,0 +1,3 @@
+mvn clean && mvn -Dmaven.test.skip=true package && scp target/Spatial-Joins-1.0-SNAPSHOT.jar ktr:/mnt/vdb/dataset/joins/
+
+mvn dependency:copy-dependencies -DoutputDirectory=libSedona
