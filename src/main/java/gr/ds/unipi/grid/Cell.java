@@ -3,29 +3,47 @@ package gr.ds.unipi.grid;
 import gr.ds.unipi.TypeSet;
 import gr.ds.unipi.agreements.Space;
 import gr.ds.unipi.shapes.Circle;
+import gr.ds.unipi.shapes.Position;
 import gr.ds.unipi.shapes.Rectangle;
-import scala.Function4;
 
-import java.io.Serializable;
-import java.util.*;
-
-import static gr.ds.unipi.grid.Position.*;
+import static gr.ds.unipi.shapes.Position.*;
 
 public class Cell implements Space {
 
     private final Rectangle rectangle;
 
-    private long totalNumberOfPointsAType;
-    private long totalNumberOfPointsBType;
+    private int totalNumberOfPointsAType;
+    private int totalNumberOfPointsBType;
 
     //NEW ADDED
-    private final long[] datasetASpecialAreas = {0,0,0,0};
-    private final long[] datasetBSpecialAreas = {0,0,0,0};
+    private final int[] datasetASpecialAreas = {0,0,0,0};
+    private final int[] datasetBSpecialAreas = {0,0,0,0};
 
-    private final long[] datasetAQuarteredAreas = {0,0,0,0};
-    private final long[] datasetBQuarteredAreas = {0,0,0,0};
+    private final int[] datasetAQuarteredAreas = {0,0,0,0};
+    private final int[] datasetBQuarteredAreas = {0,0,0,0};
     //bottom,right,top,left
     //NEW ADDED
+//    private long datasetASpecialAreasBottom = 0;
+//    private long datasetBSpecialAreasBottom = 0;
+//    private long datasetAQuarteredAreasBottomRight = 0;
+//    private long datasetBQuarteredAreasBottomRight = 0;
+//
+//    private long datasetASpecialAreasRight = 0;
+//    private long datasetBSpecialAreasRight = 0;
+//    private long datasetAQuarteredAreasTopRight = 0;
+//    private long datasetBQuarteredAreasTopRight = 0;
+//
+//    private long datasetASpecialAreasTop = 0;
+//    private long datasetBSpecialAreasTop = 0;
+//    private long datasetAQuarteredAreasTopLeft = 0;
+//    private long datasetBQuarteredAreasTopLeft = 0;
+//
+//
+//    private long datasetASpecialAreasLeft = 0;
+//    private long datasetBSpecialAreasLeft = 0;
+//    private long datasetAQuarteredAreasBottomLeft = 0;
+//    private long datasetBQuarteredAreasBottomLeft = 0;
+
 
     private Cell(Rectangle rectangle){
         this.rectangle = rectangle;
@@ -43,13 +61,28 @@ public class Cell implements Space {
         return new Cell(rectangle);
     }
 
-    public long getNumberOfPointsAType() {
+    public int getNumberOfPointsAType() {
         return totalNumberOfPointsAType;
     }
 
-    public long getNumberOfPointsBType() {
+    public int getNumberOfPointsBType() {
         return totalNumberOfPointsBType;
     }
+
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//
+//        Cell cell = (Cell) o;
+//
+//        return rectangle.equals(cell.rectangle);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        return rectangle.hashCode();
+//    }
 
     @Override
     public boolean equals(Object o) {
@@ -58,12 +91,12 @@ public class Cell implements Space {
 
         Cell cell = (Cell) o;
 
-        return rectangle.equals(cell.rectangle);
+        return rectangle.getLowerBound().equals(cell.rectangle.getLowerBound());
     }
 
     @Override
     public int hashCode() {
-        return rectangle.hashCode();
+        return rectangle.getLowerBound().hashCode();
     }
 
     public void addPointToDataset(/*double x, double y, double r,*/ TypeSet dataset, Position position){
@@ -175,70 +208,199 @@ public class Cell implements Space {
         }
     }
 
-    public long getNumberOfPointsAInBottomSpecialArea(){
+    public int getNumberOfPointsAInBottomSpecialArea(){
             return datasetASpecialAreas[0];
     }
 
-    public long getNumberOfPointsAInRightSpecialArea(){
+    public int getNumberOfPointsAInRightSpecialArea(){
             return datasetASpecialAreas[1];
     }
 
-    public long getNumberOfPointsAInTopSpecialArea(){
+    public int getNumberOfPointsAInTopSpecialArea(){
             return datasetASpecialAreas[2];
     }
 
-    public long getNumberOfPointsAInLeftSpecialArea(){
+    public int getNumberOfPointsAInLeftSpecialArea(){
             return datasetASpecialAreas[3];
     }
 
-    public long getNumberOfPointsAInBottomRightQuarterArea(){
+    public int getNumberOfPointsAInBottomRightQuarterArea(){
             return datasetAQuarteredAreas[0];
     }
 
-    public long getNumberOfPointsAInTopRightQuarterArea(){
+    public int getNumberOfPointsAInTopRightQuarterArea(){
             return datasetAQuarteredAreas[1];
     }
 
-    public long getNumberOfPointsAInTopLeftQuarterArea(){
+    public int getNumberOfPointsAInTopLeftQuarterArea(){
             return datasetAQuarteredAreas[2];
     }
 
-    public long getNumberOfPointsAInBottomLeftQuarterArea(){
+    public int getNumberOfPointsAInBottomLeftQuarterArea(){
             return datasetAQuarteredAreas[3];
     }
 
-    public long getNumberOfPointsBInBottomSpecialArea(){
+    public int getNumberOfPointsBInBottomSpecialArea(){
             return datasetBSpecialAreas[0];
     }
 
-    public long getNumberOfPointsBInRightSpecialArea(){
+    public int getNumberOfPointsBInRightSpecialArea(){
             return datasetBSpecialAreas[1];
     }
 
-    public long getNumberOfPointsBInTopSpecialArea(){
+    public int getNumberOfPointsBInTopSpecialArea(){
             return datasetBSpecialAreas[2];
     }
 
-    public long getNumberOfPointsBInLeftSpecialArea(){
+    public int getNumberOfPointsBInLeftSpecialArea(){
             return datasetBSpecialAreas[3];
     }
 
-    public long getNumberOfPointsBInBottomRightQuarterArea(){
+    public int getNumberOfPointsBInBottomRightQuarterArea(){
             return datasetBQuarteredAreas[0];
     }
 
-    public long getNumberOfPointsBInTopRightQuarterArea(){
+    public int getNumberOfPointsBInTopRightQuarterArea(){
             return datasetBQuarteredAreas[1];
     }
 
-    public long getNumberOfPointsBInTopLeftQuarterArea(){
+    public int getNumberOfPointsBInTopLeftQuarterArea(){
             return datasetBQuarteredAreas[2];
     }
 
-    public long getNumberOfPointsBInBottomLeftQuarterArea(){
+    public int getNumberOfPointsBInBottomLeftQuarterArea(){
             return datasetBQuarteredAreas[3];
     }
 
+
+
+//    private void addToBottomSpecialArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetASpecialAreasBottom++;
+//        }else{
+//            datasetBSpecialAreasBottom++;
+//        }
+//    }
+//
+//    private void addToRightSpecialArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetASpecialAreasRight++;
+//        }else{
+//            datasetBSpecialAreasRight++;
+//        }
+//    }
+//
+//    private void addToTopSpecialArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetASpecialAreasTop++;
+//        }else{
+//            datasetBSpecialAreasTop++;
+//        }
+//    }
+//
+//    private void addToLeftSpecialArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetASpecialAreasLeft++;
+//        }else{
+//            datasetBSpecialAreasLeft++;
+//        }
+//    }
+//
+//    private void addToBottomRightQuarterArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetAQuarteredAreasBottomRight++;
+//        }else{
+//            datasetBQuarteredAreasBottomRight++;
+//        }
+//    }
+//
+//    private void addToTopRightQuarterArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetAQuarteredAreasTopRight++;
+//        }else{
+//            datasetBQuarteredAreasTopRight++;
+//        }
+//    }
+//
+//    private void addToTopLeftQuarterArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetAQuarteredAreasTopLeft++;
+//        }else{
+//            datasetBQuarteredAreasTopLeft++;
+//        }
+//    }
+//
+//    private void addToBottomLeftQuarterArea(TypeSet dataset){
+//        if(dataset.equals(TypeSet.A)){
+//            datasetAQuarteredAreasBottomLeft++;
+//        }else{
+//            datasetBQuarteredAreasBottomLeft++;
+//        }
+//    }
+//
+//    public long getNumberOfPointsAInBottomSpecialArea(){
+//        return datasetASpecialAreasBottom;
+//    }
+//
+//    public long getNumberOfPointsAInRightSpecialArea(){
+//        return datasetASpecialAreasRight;
+//    }
+//
+//    public long getNumberOfPointsAInTopSpecialArea(){
+//        return datasetASpecialAreasTop;
+//    }
+//
+//    public long getNumberOfPointsAInLeftSpecialArea(){
+//        return datasetASpecialAreasLeft;
+//    }
+//
+//    public long getNumberOfPointsAInBottomRightQuarterArea(){
+//        return datasetAQuarteredAreasBottomRight;
+//    }
+//
+//    public long getNumberOfPointsAInTopRightQuarterArea(){
+//        return datasetAQuarteredAreasTopRight;
+//    }
+//
+//    public long getNumberOfPointsAInTopLeftQuarterArea(){
+//        return datasetAQuarteredAreasTopLeft;
+//    }
+//
+//    public long getNumberOfPointsAInBottomLeftQuarterArea(){
+//        return datasetAQuarteredAreasBottomLeft;
+//    }
+//
+//    public long getNumberOfPointsBInBottomSpecialArea(){
+//        return datasetBSpecialAreasBottom;
+//    }
+//
+//    public long getNumberOfPointsBInRightSpecialArea(){
+//        return datasetBSpecialAreasRight;
+//    }
+//
+//    public long getNumberOfPointsBInTopSpecialArea(){
+//        return datasetBSpecialAreasTop;
+//    }
+//
+//    public long getNumberOfPointsBInLeftSpecialArea(){
+//        return datasetBSpecialAreasLeft;
+//    }
+//
+//    public long getNumberOfPointsBInBottomRightQuarterArea(){
+//        return datasetBQuarteredAreasBottomRight;
+//    }
+//
+//    public long getNumberOfPointsBInTopRightQuarterArea(){
+//        return datasetBQuarteredAreasTopRight;
+//    }
+//
+//    public long getNumberOfPointsBInTopLeftQuarterArea(){
+//        return datasetBQuarteredAreasTopLeft;
+//    }
+//
+//    public long getNumberOfPointsBInBottomLeftQuarterArea(){
+//        return datasetBQuarteredAreasBottomLeft;
+//    }
     private boolean isInBottomSpecialArea(double y, double r){
         if(Double.compare(y, rectangle.getLowerBound().getY() + r) == -1){
             return true;
@@ -427,10 +589,10 @@ public class Cell implements Space {
         }
     }
 
-      private HashMap<Integer, TypeSet> neighbors = new HashMap<>();
+//      private HashMap<Integer, TypeSet> neighbors = new HashMap<>();
 //    private long extraNumberOfPointsAType = 0;
 //    private long extraNumberOfPointsBType = 0;
-
+//
 //    public long getExtraNumberOfPointsAType(){
 //        return extraNumberOfPointsAType;
 //    }
@@ -440,22 +602,24 @@ public class Cell implements Space {
 //    }
 
     public boolean containsNeighboor(int cellHash){
-        return neighbors.containsKey(cellHash);
+//        return neighbors.containsKey(cellHash);
+        return /*neighbors.containsKey(cellHash)*/false;
     }
 
     public void addNeighboor(int cellHash, TypeSet typeset){
-        neighbors.put(cellHash, typeset);
+//        neighbors.put(cellHash, typeset);
     }
 
     public TypeSet getNeighborTypeSet(int cellHash){
-        return neighbors.get(cellHash);
+//        return neighbors.get(cellHash);
+        return /*neighbors.get(cellHash)*/null;
     }
 
-    public void addExtraNumberOfPointsAType(long numberOfPoints){
+    public void addExtraNumberOfPointsAType(int numberOfPoints){
         totalNumberOfPointsAType = totalNumberOfPointsAType + numberOfPoints;
     }
 
-    public void addExtraNumberOfPointsBType(long numberOfPoints){
+    public void addExtraNumberOfPointsBType(int numberOfPoints){
         totalNumberOfPointsBType = totalNumberOfPointsBType + numberOfPoints;
     }
 

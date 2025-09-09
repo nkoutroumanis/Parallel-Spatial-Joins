@@ -7,6 +7,7 @@ import gr.ds.unipi.agreements.Edge;
 import gr.ds.unipi.agreements.Space;
 import gr.ds.unipi.grid.*;
 import gr.ds.unipi.shapes.Point;
+import gr.ds.unipi.shapes.Position;
 import gr.ds.unipi.shapes.Rectangle;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -19,7 +20,6 @@ import org.apache.spark.sql.execution.joins.UnsafeHashedRelation;
 import org.apache.spark.sql.expressions.UserDefinedFunction;
 import org.apache.spark.sql.functions$;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.storage.StorageLevel;
 import scala.Tuple3;
 
 import java.io.BufferedWriter;
@@ -54,32 +54,37 @@ public class MetricsRealsPruned1 {
         double radius = Double.parseDouble(args[1]);
         int flag = Integer.parseInt(args[2]);
 
-        TriFunction<Cell, Cell, Point, Agreement> function = null;
-        if(flag==1){
-            function = NewFunc.datasetA;
-        }else if(flag==2){
-            function = NewFunc.datasetB;
-        }else if(flag==3){
-            function = NewFunc.costBasedCombinedWithBoundaries;
-        }else if(flag == 4){
-            function = NewFunc.lesserPointsinBoundaries;
-        }else if(flag == 5){
-            function = NewFunc.dok;
-        }else if(flag == 6){
-            function = NewFunc.dok1;
-        }else if(flag == 7){
-            function = NewFunc.dok2;
-        }else if(flag == 8){
-            function = NewFunc.costBasedBackpropagation;
-        }else if(flag == 9){
-            function = NewFunc.case3Backpropagation;
-        }else{
-            try {
-                throw new Exception("Wrong Flag");
-            } catch (Exception e) {
-                e.printStackTrace();
+//        ReplicationType function = null;
+//        if (flag == 1) {
+//            function = new DatasetA();
+//        }
+            gr.ds.unipi.grid.Function4<Cell, Cell, Point, Agreement> function = null;
+            if (flag == 1) {
+                function = NewFunc.datasetA;
+            } else if (flag == 2) {
+                function = NewFunc.datasetB;
+            } else if (flag == 3) {
+                function = NewFunc.costBasedCombinedWithBoundaries;
+            } else if (flag == 4) {
+                function = NewFunc.lesserPointsinBoundaries;
+            } else if (flag == 5) {
+                function = NewFunc.dok;
+            } else if (flag == 6) {
+                function = NewFunc.dok1;
+            } else if (flag == 7) {
+                function = NewFunc.dok2;
+            } else if (flag == 8) {
+                function = NewFunc.costBasedBackpropagation;
+            } else if (flag == 9) {
+                function = NewFunc.case3Backpropagation;
+            } else {
+                try {
+                    throw new Exception("Wrong Flag");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }
+
         if(args[6].equals("EMPTY")){
             Grid.experiments = "";
         }else if(args[6].equals("DIAG_ONLY")){
@@ -145,11 +150,11 @@ public class MetricsRealsPruned1 {
 //        System.out.println("Broadcasted");
 
         UserDefinedFunction udfCoordinatesToArrayA = udf(
-                (String x, String y) -> gridBroadcasted.value().getPartitionsAType(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
+                (String x, String y) -> gridBroadcasted.value().getPartitionsATypeInExecutor(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
         );
 
         UserDefinedFunction udfCoordinatesToArrayB = udf(
-                (String x, String y) -> gridBroadcasted.value().getPartitionsBType(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
+                (String x, String y) -> gridBroadcasted.value().getPartitionsBTypeInExecutor(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
         );
 
         df1 = df1.withColumn("partitions", udfCoordinatesToArrayA.apply(col("x_1"),col("y_1")));

@@ -7,21 +7,18 @@ import gr.ds.unipi.agreements.Edge;
 import gr.ds.unipi.agreements.Space;
 import gr.ds.unipi.grid.*;
 import gr.ds.unipi.shapes.Point;
+import gr.ds.unipi.shapes.Position;
 import gr.ds.unipi.shapes.Rectangle;
-import org.apache.spark.HashPartitioner;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaFutureAction;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 import scala.Tuple3;
-import scala.reflect.ManifestFactory$;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -40,33 +37,36 @@ public class GridTimeDistOLD {
         double radius = Double.parseDouble(args[1]);
         int flag = Integer.parseInt(args[2]);
 
-        TriFunction<Cell, Cell, Point, Agreement> function = null;
-        if(flag==1){
-            function = NewFunc.datasetA;
-        }else if(flag==2){
-            function = NewFunc.datasetB;
-        }else if(flag==3){
-            function = NewFunc.costBasedCombinedWithBoundaries;
-        }else if(flag == 4){
-            function = NewFunc.lesserPointsinBoundaries;
-        }else if(flag == 5){
-            function = NewFunc.dok;
-        }else if(flag == 6){
-            function = NewFunc.dok1;
-        }else if(flag == 7){
-            function = NewFunc.dok2;
-        }else if(flag == 8){
-            function = NewFunc.costBasedBackpropagation;
-        }else if(flag == 9){
-            function = NewFunc.case3Backpropagation;
-        }
-        else{
-            try {
-                throw new Exception("Wrong Flag");
-            } catch (Exception e) {
-                e.printStackTrace();
+//        ReplicationType function = null;
+//        if (flag == 1) {
+//            function = new DatasetA();
+//        }
+            gr.ds.unipi.grid.Function4<Cell, Cell, Point, Agreement> function = null;
+            if (flag == 1) {
+                function = NewFunc.datasetA;
+            } else if (flag == 2) {
+                function = NewFunc.datasetB;
+            } else if (flag == 3) {
+                function = NewFunc.costBasedCombinedWithBoundaries;
+            } else if (flag == 4) {
+                function = NewFunc.lesserPointsinBoundaries;
+            } else if (flag == 5) {
+                function = NewFunc.dok;
+            } else if (flag == 6) {
+                function = NewFunc.dok1;
+            } else if (flag == 7) {
+                function = NewFunc.dok2;
+            } else if (flag == 8) {
+                function = NewFunc.costBasedBackpropagation;
+            } else if (flag == 9) {
+                function = NewFunc.case3Backpropagation;
+            } else {
+                try {
+                    throw new Exception("Wrong Flag");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }
 
         if(args[6].equals("EMPTY")){
             Grid.experiments = "";
@@ -122,9 +122,9 @@ public class GridTimeDistOLD {
             @Override
             public Iterator<Tuple2<Integer, Tuple3<String, Double, Double>>> call(Tuple3<String, Double, Double> tuple) throws Exception {
                 List<Tuple2<Integer, Tuple3<String, Double, Double>>> list = new ArrayList<>();
-                String[] cellIds = gridBroadcasted.getValue().getPartitionsAType(tuple._2(), tuple._3());
-                for (String cellId : cellIds) {
-                    list.add(new Tuple2<>(Integer.parseInt(cellId), tuple));
+                int[] cellIds = gridBroadcasted.getValue().getPartitionsATypeInExecutor(tuple._2(), tuple._3());
+                for (int cellId : cellIds) {
+                    list.add(new Tuple2<>(cellId, tuple));
                 }
                 return list.iterator();
             }
@@ -134,9 +134,9 @@ public class GridTimeDistOLD {
             @Override
             public Iterator<Tuple2<Integer, Tuple3<String, Double, Double>>> call(Tuple3<String, Double, Double> tuple) throws Exception {
                 List<Tuple2<Integer, Tuple3<String, Double, Double>>> list = new ArrayList<>();
-                String[] cellIds = gridBroadcasted.getValue().getPartitionsBType(tuple._2(), tuple._3());
-                for (String cellId : cellIds) {
-                    list.add(new Tuple2<>(Integer.parseInt(cellId), tuple));
+                int[] cellIds = gridBroadcasted.getValue().getPartitionsBTypeInExecutor(tuple._2(), tuple._3());
+                for (int cellId : cellIds) {
+                    list.add(new Tuple2<>(cellId, tuple));
                 }
                 return list.iterator();
             }

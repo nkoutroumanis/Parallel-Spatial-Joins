@@ -20,7 +20,7 @@ public class GridTestYarn {
         //NewFunc.function = NewFunc.datasetA;
 
         Grid grid = Grid.newGrid(Rectangle.newRectangle(Point.newPoint(0,0), Point.newPoint(100,100)),0.5, NewFunc.datasetA);
-        System.out.println(Arrays.toString(grid.getPartitionsAType(80.190668, 26.035558)));
+        System.out.println(Arrays.toString(grid.getPartitionsATypeInExecutor(80.190668, 26.035558)));
     }
 
     @Test

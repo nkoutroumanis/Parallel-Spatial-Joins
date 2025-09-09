@@ -61,7 +61,7 @@ public class GridRunSynthetic2 {
                 bf = new BufferedReader(new FileReader(pathDatasetA));
                 while ((line = bf.readLine()) != null) {
                     String[] record = line.split(";");
-                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsAType(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
+                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsATypeInExecutor(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
                     wr.newLine();
                 }
                 bf.close();
@@ -71,7 +71,7 @@ public class GridRunSynthetic2 {
                 bf = new BufferedReader(new FileReader(pathDatasetB));
                 while ((line = bf.readLine()) != null) {
                     String[] record = line.split(";");
-                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsBType(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
+                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsBTypeInExecutor(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
                     wr.newLine();
                 }
                 bf.close();

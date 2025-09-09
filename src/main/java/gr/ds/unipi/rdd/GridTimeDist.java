@@ -7,6 +7,7 @@ import gr.ds.unipi.agreements.Edge;
 import gr.ds.unipi.agreements.Space;
 import gr.ds.unipi.grid.*;
 import gr.ds.unipi.shapes.Point;
+import gr.ds.unipi.shapes.Position;
 import gr.ds.unipi.shapes.Rectangle;
 import org.apache.spark.Partitioner;
 import org.apache.spark.SparkConf;
@@ -26,7 +27,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class GridTimeDist {
 
@@ -37,7 +37,7 @@ public class GridTimeDist {
         int repeats = Integer.parseInt(args[8]);
         for (int n = 0; n < repeats; n++) {
             SparkConf sparkConf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").set("spark.kryo.registrationRequired", "true")
-                    .registerKryoClasses(new Class[]{Grid.class, Agreement.class, Agreements.class, Edge.class, Edge[].class, Space.class, Cell.class, NewFunc.class, Position.class, TypeSet.class, java.util.HashMap.class, Point.class, Rectangle.class, ArrayList.class, java.lang.invoke.SerializedLambda.class, org.apache.spark.util.collection.CompactBuffer[].class, org.apache.spark.util.collection.CompactBuffer.class, ManifestFactory$.class, ManifestFactory$.MODULE$.Any().getClass(), ConcurrentHashMap.class});
+                    .registerKryoClasses(new Class[]{Grid.class, Agreement.class, Agreements.class, Edge.class, Edge[].class, Space.class, Cell.class, NewFunc.class, Position.class, TypeSet.class, java.util.HashMap.class, Point.class, Rectangle.class, ArrayList.class, java.lang.invoke.SerializedLambda.class, org.apache.spark.util.collection.CompactBuffer[].class, org.apache.spark.util.collection.CompactBuffer.class, ManifestFactory$.class, ManifestFactory$.MODULE$.Any().getClass()});
             SparkSession sparkSession = SparkSession.builder().config(sparkConf)/*.master("local[*]")*/.getOrCreate();
             JavaSparkContext jsc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
             //System.out.println(sparkSession.sparkContext().getConf().get("spark.executor.instances"));
@@ -45,7 +45,11 @@ public class GridTimeDist {
             double radius = Double.parseDouble(args[1]);
             int flag = Integer.parseInt(args[2]);
 
-            TriFunction<Cell, Cell, Point, Agreement> function = null;
+//            ReplicationType function = null;
+//            if (flag == 1) {
+//                function = new DatasetA();
+//            }
+            gr.ds.unipi.grid.Function4<Cell, Cell, Point, Agreement> function = null;
             if (flag == 1) {
                 function = NewFunc.datasetA;
             } else if (flag == 2) {
@@ -177,9 +181,9 @@ public class GridTimeDist {
                 @Override
                 public Iterator<Tuple2<Integer, Tuple3<String, Double, Double>>> call(Tuple3<String, Double, Double> tuple) throws Exception {
                     List<Tuple2<Integer, Tuple3<String, Double, Double>>> list = new ArrayList<>();
-                    String[] cellIds = gridBroadcasted.getValue().getPartitionsAType(tuple._2(), tuple._3());
-                    for (String cellId : cellIds) {
-                        list.add(new Tuple2<>(Integer.parseInt(cellId), tuple));
+                    int[] cellIds = gridBroadcasted.getValue().getPartitionsATypeInExecutor(tuple._2(), tuple._3());
+                    for (int cellId : cellIds) {
+                        list.add(new Tuple2<>(cellId, tuple));
                     }
                     return list.iterator();
                 }
@@ -189,14 +193,16 @@ public class GridTimeDist {
                 @Override
                 public Iterator<Tuple2<Integer, Tuple3<String, Double, Double>>> call(Tuple3<String, Double, Double> tuple) throws Exception {
                     List<Tuple2<Integer, Tuple3<String, Double, Double>>> list = new ArrayList<>();
-                    String[] cellIds = gridBroadcasted.getValue().getPartitionsBType(tuple._2(), tuple._3());
-                    for (String cellId : cellIds) {
-                        list.add(new Tuple2<>(Integer.parseInt(cellId), tuple));
+                    int[] cellIds = gridBroadcasted.getValue().getPartitionsBTypeInExecutor(tuple._2(), tuple._3());
+                    for (int cellId : cellIds) {
+                        list.add(new Tuple2<>(cellId, tuple));
                     }
                     return list.iterator();
                 }
             });
 
+//            long count = pairRDDA.count();
+//            count = count + pairRDDB.count();
             JavaPairRDD<Integer, Tuple2<Tuple3<String, Double, Double>, Tuple3<String, Double, Double>>> joinedRDD = pairRDDA.join(pairRDDB, cp);
 
             long count = joinedRDD.filter((t) -> {
@@ -205,7 +211,7 @@ public class GridTimeDist {
                 } else {
                     return false;
                 }
-            }).count();
+            })/*.map(tuple->tuple._2).distinct(384)*/.count();
 
             time = time + (System.currentTimeMillis() - startJobTime);
             cou = count;

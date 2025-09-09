@@ -15,7 +15,6 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 public class GridRunSkewed {
 
@@ -47,7 +46,7 @@ public class GridRunSkewed {
                 double r1 = 0.05 * r;
                 r1 = ((Math.floor(r1 * Math.pow(10, 2))) / Math.pow(10, 2));
                 System.out.println(r1);
-                Grid grid = Grid.newGrid(Rectangle.newRectangle(Point.newPoint(0, 0), Point.newPoint(100, 100)), r1,(TriFunction<Cell, Cell, Point, Agreement>) entry.getValue().getKey());
+                Grid grid = Grid.newGrid(Rectangle.newRectangle(Point.newPoint(0, 0), Point.newPoint(100, 100)), r1,(Function4<Cell, Cell, Point, Agreement>) entry.getValue().getKey());
 
                 String line = null;
 
@@ -77,7 +76,7 @@ public class GridRunSkewed {
                 bf = new BufferedReader(new FileReader(pathDatasetA));
                 while ((line = bf.readLine()) != null) {
                     String[] record = line.split(";");
-                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsAType(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
+                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsATypeInExecutor(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
                     wr.newLine();
                 }
                 bf.close();
@@ -87,7 +86,7 @@ public class GridRunSkewed {
                 bf = new BufferedReader(new FileReader(pathDatasetB));
                 while ((line = bf.readLine()) != null) {
                     String[] record = line.split(";");
-                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsBType(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
+                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsBTypeInExecutor(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
                     wr.newLine();
                 }
                 bf.close();

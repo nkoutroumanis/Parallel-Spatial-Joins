@@ -45,8 +45,8 @@ public class GridDEBUGG {
                 bf.close();
 
                 grid.checkforsymmetry();
-        System.out.println(Arrays.toString(grid.getPartitionsAType(24.527145678047727,26.0246608480878)));
-        System.out.println(Arrays.toString(grid.getPartitionsBType(22.646116576767454, 25.765539676176193)));
+        System.out.println(Arrays.toString(grid.getPartitionsATypeInExecutor(24.527145678047727,26.0246608480878)));
+        System.out.println(Arrays.toString(grid.getPartitionsBTypeInExecutor(22.646116576767454, 25.765539676176193)));
 
     }
 }

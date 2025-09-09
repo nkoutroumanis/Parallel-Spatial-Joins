@@ -8,36 +8,42 @@ import java.util.stream.Collectors;
 public class LPTPartitioner extends Partitioner {
 
     private final int numParts;
-    private final TreeMap<Integer, Integer> cellsPartitonsMap; //map cells to spark partitions
-    public LPTPartitioner(Map<Long,Long> hashMap, int numParts){
-        cellsPartitonsMap = new TreeMap<>();
+    private final Map<Integer, Integer> cellsPartitonsMap; //map cells to spark partitions
+    public LPTPartitioner(Map<Integer,Integer> hashMap, int numParts){
+        cellsPartitonsMap = new HashMap<>();
         ltp(hashMap, numParts);
         this.numParts=numParts;
     }
 
-    private void ltp(Map<Long,Long> hashMap, int numParts){
-        long[] partitionsCosts = new long[numParts];
+    private void ltp(Map<Integer,Integer> hashMap, int numParts){
+        int[] partitionsCosts = new int[numParts];
 
-        List<Map.Entry<Long,Long>> sortedEntries = hashMap.entrySet().stream()
+        List<Map.Entry<Integer,Integer>> sortedEntries = hashMap.entrySet().stream()
                 .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder())).collect(Collectors.toList());
-                //.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+        System.out.println(sortedEntries.size());
+        System.out.println(sortedEntries.get(sortedEntries.size()-1));
+        System.out.println(sortedEntries.get(0));
+
+        //.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                         //(e1, e2) -> e1, LinkedHashMap::new));
 
         for (int i = 0; i < sortedEntries.size(); i++) {
-            if (i <= this.numParts-1) {
-                partitionsCosts[i] = sortedEntries.get(i).getValue();
-                cellsPartitonsMap.put(sortedEntries.get(i).getKey().intValue(),i);
-            }else{
+//            if (i <= this.numParts-1) {
+//                partitionsCosts[i] = sortedEntries.get(i).getValue();
+//                cellsPartitonsMap.put(sortedEntries.get(i).getKey().intValue(),i);
+//            }else{
                 int index = getIndexOfMin(partitionsCosts);
                 partitionsCosts[index] = partitionsCosts[index] + sortedEntries.get(i).getValue();
-                cellsPartitonsMap.put(sortedEntries.get(i).getKey().intValue(),index);
-            }
+                cellsPartitonsMap.put(sortedEntries.get(i).getKey(),index);
+           // }
         }
+
+//        return getIndexOfMin(partitionsCosts);
     }
 
-    private int getIndexOfMin(long[] partitionsCosts){
+    private int getIndexOfMin(int[] partitionsCosts){
         int index = -1;
-        long value = Long.MAX_VALUE;
+        int value = Integer.MAX_VALUE;
         for (int i = 0; i < partitionsCosts.length; i++) {
            if(partitionsCosts[i] < value ){
                value = partitionsCosts[i];

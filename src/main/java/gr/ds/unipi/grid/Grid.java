@@ -1,54 +1,53 @@
 package gr.ds.unipi.grid;
 
 import gr.ds.unipi.TypeSet;
-import gr.ds.unipi.agreements.Agreement;
 import gr.ds.unipi.agreements.Agreements;
+import gr.ds.unipi.agreements.Agreement;
 import gr.ds.unipi.agreements.Edge;
-import gr.ds.unipi.shapes.Circle;
 import gr.ds.unipi.shapes.Point;
+import gr.ds.unipi.shapes.Position;
 import gr.ds.unipi.shapes.Rectangle;
-import scala.Function4;
+import gr.ds.unipi.shapes.Circle;
 
-import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static gr.ds.unipi.grid.Position.*;
+import static gr.ds.unipi.shapes.Position.*;
 
 public class Grid {
 
     private final Rectangle rectangle;
-    private final long cellsInXAxis;
-    private final long cellsInYAxis;
+    private final int cellsInXAxis;
+    private final int cellsInYAxis;
 
     private final double x;
     private final double y;
 
-    private final Map<Long, Cell> cells;
-    private final Map<Point, Agreements<Cell>> agreements;
+    private HashMap<Integer, Cell> cells;
+    private HashMap<Integer, Agreements> agreements;
+//    private ConcurrentHashMap<Integer, Cell> cells;
 
+//    private ConcurrentHashMap<Point, Agreements> agreements;
     private final double r;
-    private TriFunction<Cell, Cell, Point, Agreement> function;
+    private Function4<Cell, Cell, Point, Agreement> function;
+//    private ReplicationType function;
 
-    private final boolean geoData;
+//    private final boolean geoData;
 
-    private final Function4<Cell, Double, Double, Double, Position> getPositionFunction;
+//    private final Function4<Cell, Double, Double, Double, Position> getPositionFunction;
 
-    private Grid(Rectangle rectangle, long cellsInXAxis, long cellsInYAxis, double r, TriFunction<Cell, Cell, Point, Agreement> function, boolean geoData){
+    private Grid(Rectangle rectangle, int cellsInXAxis, int cellsInYAxis, double r, /*ReplicationType function*/Function4<Cell, Cell, Point, Agreement> function, boolean geoData){
         this.rectangle = rectangle;
         this.cellsInXAxis = cellsInXAxis;
         this.cellsInYAxis = cellsInYAxis;
         this.r = r;
 
-        this.geoData = geoData;
-        if(geoData){
-            getPositionFunction = (Function4<Cell, Double, Double, Double, Position> & Serializable) Cell::getGeoPosition;
-        }else{
-            getPositionFunction = (Function4<Cell, Double, Double, Double, Position> & Serializable) Cell::getPosition;
-        }
+//        this.geoData = geoData;
+//        if(geoData){
+//            getPositionFunction = (Function4<Cell, Double, Double, Double, Position> & Serializable) Cell::getGeoPosition;
+//        }else{
+//            getPositionFunction = (Function4<Cell, Double, Double, Double, Position> & Serializable) Cell::getPosition;
+//        }
 
         if(Double.compare(r,0) != 1){
             try {
@@ -57,8 +56,8 @@ public class Grid {
                 e.printStackTrace();
             }
         }
-        x = (rectangle.getUpperBound().getX() - rectangle.getLowerBound().getX() ) / cellsInXAxis;
-        y = (rectangle.getUpperBound().getY() - rectangle.getLowerBound().getY() ) / cellsInYAxis;
+        x = (rectangle.getUpperBound().getX() - rectangle.getLowerBound().getX()) / cellsInXAxis;
+        y = (rectangle.getUpperBound().getY() - rectangle.getLowerBound().getY()) / cellsInYAxis;
         System.out.println("x: "+x +" y:"+y);
 
         if(!geoData) {
@@ -70,9 +69,13 @@ public class Grid {
                 }
             }
         }
+        cells = new HashMap<>();
+        agreements = new HashMap<>();
+//        cells = Collections.synchronizedMap(new HashMap<>());
+//        agreements = Collections.synchronizedMap(new HashMap<>());
+//        cells = new ConcurrentHashMap<>(16, 0.75f, 2);
+//        agreements = new ConcurrentHashMap<>(16, 0.75f, 2);
 
-        cells = new ConcurrentHashMap<>();
-        agreements = new ConcurrentHashMap<>();
         this.function = function;
 
 //        forEach((id, rec)->{
@@ -105,8 +108,16 @@ public class Grid {
 //        });
     }
 
+//    public void initialize(){
+////        cells = new HashMap<>();
+////        agreements = new HashMap<>();
+//    cells = new ConcurrentHashMap<>(16, 0.75f, 2);
+//    agreements = new ConcurrentHashMap<>(16, 0.75f, 2);
+//    }
+
 
     public void load(){
+        long t1 = System.currentTimeMillis();
 
 //        List<Map.Entry<Long, Cell>> cellsList = cells.entrySet().stream().sorted(new Comparator<Map.Entry<Long, Cell>>() {
 //            @Override
@@ -128,19 +139,44 @@ public class Grid {
 //        });
 //                 -------------------------------------
 
-        HashMap<Long,Cell> copyHashMapCells = new HashMap<>(cells);
+//        HashMap<Integer,Cell> copyHashMapCells = new HashMap<>(cells);
 
-        for(long i = 0; i<cellsInXAxis*cellsInYAxis;i++){
-            if(copyHashMapCells.containsKey(i)){
-                Cell cell = getCell(i);
-                getAgreements(i, cell.getRectangle().getLowerBound());
-                getAgreements(i, cell.getRectangle().getLowerRightBound());
-                getAgreements(i, cell.getRectangle().getUpperLeftBound());
-                getAgreements(i, cell.getRectangle().getUpperBound());
+        Iterator<Map.Entry<Integer, Cell>> o = new HashMap(cells).entrySet()/*.parallelStream()*/.iterator();
+
+        while(o.hasNext()) {
+            Map.Entry<Integer, Cell> entry = o.next();
+            int cellID = entry.getKey();
+            Cell cell = entry.getValue();
+            getAgreements(cellID, cell.getRectangle().getLowerBound(), 0);
+            getAgreements(cellID, cell.getRectangle().getLowerRightBound(),1);
+            getAgreements(cellID, cell.getRectangle().getUpperLeftBound(),2);
+            getAgreements(cellID, cell.getRectangle().getUpperBound(), 3);
+        }
+//        function = NewFunc.datasetA;
+
+        System.out.println("Aggrements size was"+agreements.size());
+        Iterator o1 = new HashMap(agreements).entrySet()/*.parallelStream()*/.iterator();
+        while (o1.hasNext()) {
+            Map.Entry<Integer, Agreements> e = (Map.Entry<Integer, Agreements>) o1.next();
+            if(e.getValue().haveAllSameType()){
+                if(e.getValue().hasTypeA()){
+                    agreements.remove(e.getKey());
+                }else if(e.getValue().hasTypeB()){
+                    agreements.replace(e.getKey(), null);
+                }else{
+                    try {
+                        throw new Exception("Must have type A or B");
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
             }
         }
 
-        function = NewFunc.datasetA;
+        System.out.println("Aggrements size is"+agreements.size());
+        cells.clear();
+
+
 //        HashMap<Long,Cell> copyHashMapCells = new HashMap<>(cells);
 //
 //         cells.entrySet().stream().sorted(new Comparator<Map.Entry<Long, Cell>>() {
@@ -157,6 +193,7 @@ public class Grid {
 //                 getAgreements(element.getKey(), cell.getRectangle().getUpperBound());
 //             }
 //         });
+        System.out.println("Time for agreements: "+(System.currentTimeMillis()-t1)/1000);
 
     }
 
@@ -167,38 +204,38 @@ public class Grid {
         agreements.clear();
     }
 
-    public String toString(){
-        StringBuilder sb = new StringBuilder();
-
-//        if(!edges) {
+//    public String toString(){
+//        StringBuilder sb = new StringBuilder();
+//
+////        if(!edges) {
+////            forEach((id, rec) -> {
+////                sb.append(id + " " + rec.toString() + " HashCode: " + rec.hashCode() + " - #A: " + getCell(id).getNumberOfPointsAType() + " #B:" + getCell(id).getNumberOfPointsBType() + "\n");
+////            });
+////        }else{
 //            forEach((id, rec) -> {
 //                sb.append(id + " " + rec.toString() + " HashCode: " + rec.hashCode() + " - #A: " + getCell(id).getNumberOfPointsAType() + " #B:" + getCell(id).getNumberOfPointsBType() + "\n");
+//
+//                if(agreements.containsKey(rec.getLowerBound())){
+//                    sb.append(agreements.get(rec.getLowerBound()).toString(cellToId)).append("\n");
+//                }
+//
+//                Point p1 = Point.newPoint(rec.getUpperBound().getX(), rec.getLowerBound().getY());
+//                if(agreements.containsKey(p1)){
+//                    sb.append(agreements.get(p1).toString(cellToId)).append("\n");
+//                }
+//
+//                Point p2 = Point.newPoint(rec.getLowerBound().getX(), rec.getUpperBound().getY());
+//                if(agreements.containsKey(p2)){
+//                    sb.append(agreements.get(p2).toString(cellToId)).append("\n");
+//                }
+//
+//                if(agreements.containsKey(rec.getUpperBound())){
+//                    sb.append(agreements.get(rec.getUpperBound()).toString(cellToId)).append("\n");
+//                }
 //            });
-//        }else{
-            forEach((id, rec) -> {
-                sb.append(id + " " + rec.toString() + " HashCode: " + rec.hashCode() + " - #A: " + getCell(id).getNumberOfPointsAType() + " #B:" + getCell(id).getNumberOfPointsBType() + "\n");
-
-                if(agreements.containsKey(rec.getLowerBound())){
-                    sb.append(agreements.get(rec.getLowerBound()).toString(cellToId)).append("\n");
-                }
-
-                Point p1 = Point.newPoint(rec.getUpperBound().getX(), rec.getLowerBound().getY());
-                if(agreements.containsKey(p1)){
-                    sb.append(agreements.get(p1).toString(cellToId)).append("\n");
-                }
-
-                Point p2 = Point.newPoint(rec.getLowerBound().getX(), rec.getUpperBound().getY());
-                if(agreements.containsKey(p2)){
-                    sb.append(agreements.get(p2).toString(cellToId)).append("\n");
-                }
-
-                if(agreements.containsKey(rec.getUpperBound())){
-                    sb.append(agreements.get(rec.getUpperBound()).toString(cellToId)).append("\n");
-                }
-            });
-//        }
-        return sb.toString();
-    }
+////        }
+//        return sb.toString();
+//    }
 
     public double getR() {
         return r;
@@ -215,10 +252,10 @@ public class Grid {
 //        return Rectangle.newRectangle(lowerBound, upperBound);
 //    }
 
-        private Rectangle getRectangle(long cellId){
+        private Rectangle getRectangle(int cellId){
 
-        long yc = cellId/cellsInXAxis;
-        long xc = cellId - (yc * cellsInXAxis);
+        int yc = cellId/cellsInXAxis;
+        int xc = cellId - (yc * cellsInXAxis);
 
         Point lowerBound = Point.newPoint(rectangle.getLowerBound().getX() + (xc * x), rectangle.getLowerBound().getY() + (yc * y));
 //        Point upperBound = Point.newPoint(rectangle.getLowerBound().getX() + ((xc * x) + x), rectangle.getLowerBound().getY() + ((yc * y) + y));
@@ -237,18 +274,21 @@ public class Grid {
         return new Pair<>(xc, yc);
     }
 
+        public int cellToId(Cell cell){
+            return getCellId((cell.getRectangle().getLowerBound().getX()+cell.getRectangle().getUpperBound().getX())/2,(cell.getRectangle().getLowerBound().getY()+cell.getRectangle().getUpperBound().getY())/2);
+        }
 
-    private Function<Cell,Long> cellToId = (Function<Cell, Long> & Serializable) (c)-> getCellId((c.getRectangle().getLowerBound().getX()+c.getRectangle().getUpperBound().getX())/2,(c.getRectangle().getLowerBound().getY()+c.getRectangle().getUpperBound().getY())/2);
+//    private Function<Cell,Long> cellToId = (Function<Cell, Long> & Serializable) (c)-> getCellId((c.getRectangle().getLowerBound().getX()+c.getRectangle().getUpperBound().getX())/2,(c.getRectangle().getLowerBound().getY()+c.getRectangle().getUpperBound().getY())/2);
 
-    private long getCellId(double x, double y) {
+    public int getCellId(double x, double y) {
 
-        long xc = (long) ((x-rectangle.getLowerBound().getX()) / this.x);
-        long yc = (long) ((y-rectangle.getLowerBound().getY()) / this.y);
+        int xc = (int) ((x-rectangle.getLowerBound().getX()) / this.x);
+        int yc = (int) ((y-rectangle.getLowerBound().getY()) / this.y);
 
         return (xc + (yc * cellsInXAxis));
     }
 
-    private long getCellId(Point point) {
+    private int getCellId(Point point) {
         return getCellId(point.getX(), point.getY());
     }
 
@@ -256,35 +296,49 @@ public class Grid {
         return getCell(getCellId(x, y));
     }
 
-    private Cell getCell(long cellID){
-        if(cells.containsKey(cellID)){
-            return cells.get(cellID);
-        }else{
-            return getCellSingleThread(cellID);
-//            Cell cell = Cell.newCell(getRectangle(cellID));
+    private Cell getCell(int cellID){
+//        if(cells.containsKey(cellID)){
+//            return cells.get(cellID);
+//        }else{
+////            return getCellSingleThread(cellID);
+//            return Cell.newCell(getRectangle(cellID));
 //            cells.put(cellID, cell);
 //            return cell;
-        }
+            return cells.computeIfAbsent(cellID, (c)->{return Cell.newCell(getRectangle(c));});
+//        }
     }
 
-    private synchronized Cell getCellSingleThread(long cellID){
-        if(cells.containsKey(cellID)){
-            return cells.get(cellID);
-        }else{
-            Cell cell = Cell.newCell(getRectangle(cellID));
-            cells.put(cellID, cell);
-            return cell;
-        }
+    private Cell getCellInExecutor(int cellID){
+//        if(cells.containsKey(cellID)){
+//            return cells.get(cellID);
+//        }else{
+//            return getCellSingleThread(cellID);
+            return Cell.newCell(getRectangle(cellID));
+//        }
     }
 
-    private boolean hasTop(long cellID){
+//    public Function<Long, Cell> mappingCell = (Function<Long, Cell>  & Serializable) (cellID) -> {
+//        return Cell.newCell(getRectangle(cellID));
+//    };
+
+//    private /*synchronized*/ Cell getCellSingleThread(long cellID){
+////        if(cells.containsKey(cellID)){
+////            return cells.get(cellID);
+////        }else{
+//            Cell cell = Cell.newCell(getRectangle(cellID));
+//            cells.putIfAbsent(cellID, cell);
+//            return cell;
+////        }
+//    }
+
+    private boolean hasTop(int cellID){
         if((cellID + cellsInXAxis)< (cellsInXAxis*cellsInYAxis)){
             return true;
         }
         return false;
     }
 
-    private boolean hasBottom(long cellID){
+    private boolean hasBottom(int cellID){
         if((cellID - cellsInXAxis)>= 0){
             return true;
         }
@@ -292,100 +346,470 @@ public class Grid {
 
     }
 
-    private boolean hasLeft(long cellID){
+    private boolean hasLeft(int cellID){
         if(((cellID -1) >= 0) && ((cellID - 1)%(cellsInXAxis)) != (cellsInXAxis-1)){
             return true;
         }
         return false;
     }
 
-    private boolean hasRight(long cellID){
+    private boolean hasRight(int cellID){
         if((cellID +1) < (cellsInXAxis*cellsInYAxis) && ((cellID +1)%cellsInXAxis) !=0){
             return true;
         }
         return false;
     }
 
-    private Agreements<Cell> getAgreements(long cellID, Point point){
-            if (agreements.containsKey(point)) {
-                return agreements.get(point);
-            } else {
-                return getAgreementsSingleThread(cellID, point);
-            }
+    private Agreements getAgreements(int cellID, Point point, int index){
 
-    }
+        return agreements.computeIfAbsent(getAggID(cellID, index), (p)->{
 
-    private synchronized Agreements<Cell> getAgreementsSingleThread(long cellID, Point point){
-        if (agreements.containsKey(point)) {
-            return agreements.get(point);
-        }else {
+                    List<Cell> cells = new ArrayList<>();
 
-            boolean bottomLeft = false;
-            boolean bottomRight = false;
-            boolean topLeft = false;
-            boolean topRight = false;
-
-            if (getCell(cellID).getRectangle().getLowerBound().equals(point)) {
-                bottomLeft = true;
-            } else if (getCell(cellID).getRectangle().getUpperBound().equals(point)) {
-                topRight = true;
-            } else if (Double.compare(getCell(cellID).getRectangle().getLowerBound().getX(), point.getX()) == 0 &&
-                    Double.compare(getCell(cellID).getRectangle().getUpperBound().getY(), point.getY()) == 0) {
-                topLeft = true;
-            } else if (Double.compare(getCell(cellID).getRectangle().getUpperBound().getX(), point.getX()) == 0 &&
-                    Double.compare(getCell(cellID).getRectangle().getLowerBound().getY(), point.getY()) == 0) {
-                bottomRight = true;
-            } else {
-                try {
-                    throw new Exception("Problem in determining the cell's corner for Agreements creation.");
-                } catch (Exception e) {
-                    e.printStackTrace();
+//                    if (getCell(cellID).getRectangle().getLowerBound().equals(point)) {
+//                        if (hasBottom(cellID) && hasLeft(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis) - 1));
+//                        }
+//                        if (hasBottom(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis)));
+//                        }
+//                        if (hasLeft(cellID)) {
+//                            cells.add(getCell((cellID - 1)));
+//                        }
+//                        cells.add(getCell(cellID));
+//
+//
+//                    } else if (getCell(cellID).getRectangle().getUpperBound().equals(point)) {
+//                        cells.add(getCell(cellID));
+//                        if (hasRight(cellID)) {
+//                            cells.add(getCell(cellID + 1));
+//                        }
+//                        if (hasTop(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis)));
+//                        }
+//                        if (hasTop(cellID) && hasRight(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis) + 1));
+//                        }
+//
+//                    } else if (Double.compare(getCell(cellID).getRectangle().getLowerBound().getX(), point.getX()) == 0 &&
+//                            Double.compare(getCell(cellID).getRectangle().getUpperBound().getY(), point.getY()) == 0) {
+//                        if (hasLeft(cellID)) {
+//                            cells.add(getCell((cellID - 1)));
+//                        }
+//                        cells.add(getCell(cellID));
+//                        if (hasTop(cellID) && hasLeft(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis) - 1));
+//                        }
+//
+//                        if (hasTop(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis)));
+//                        }
+//
+//                    } else if (Double.compare(getCell(cellID).getRectangle().getUpperBound().getX(), point.getX()) == 0 &&
+//                            Double.compare(getCell(cellID).getRectangle().getLowerBound().getY(), point.getY()) == 0) {
+//                        if (hasBottom(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis)));
+//                        }
+//                        if (hasBottom(cellID) && hasRight(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis) + 1));
+//                        }
+//                        cells.add(getCell(cellID));
+//                        if (hasRight(cellID)) {
+//                            cells.add(getCell(cellID + 1));
+//                        }
+//
+//                    } else {
+//                        try {
+//                            throw new Exception("Problem in determining the cell's corner for Agreements creation.");
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+                switch (index){
+                    case 0:
+                        if (hasBottom(cellID) && hasLeft(cellID)) {
+                            cells.add(getCell((cellID - cellsInXAxis) - 1));
+                        }
+                        if (hasBottom(cellID)) {
+                            cells.add(getCell((cellID - cellsInXAxis)));
+                        }
+                        if (hasLeft(cellID)) {
+                            cells.add(getCell((cellID - 1)));
+                        }
+                        cells.add(getCell(cellID));
+                        break;
+                    case 1:
+                        if (hasBottom(cellID)) {
+                            cells.add(getCell((cellID - cellsInXAxis)));
+                        }
+                        if (hasBottom(cellID) && hasRight(cellID)) {
+                            cells.add(getCell((cellID - cellsInXAxis) + 1));
+                        }
+                        cells.add(getCell(cellID));
+                        if (hasRight(cellID)) {
+                            cells.add(getCell(cellID + 1));
+                        }
+                        break;
+                    case 2:
+                        if (hasLeft(cellID)) {
+                            cells.add(getCell((cellID - 1)));
+                        }
+                        cells.add(getCell(cellID));
+                        if (hasTop(cellID) && hasLeft(cellID)) {
+                            cells.add(getCell((cellID + cellsInXAxis) - 1));
+                        }
+                        if (hasTop(cellID)) {
+                            cells.add(getCell((cellID + cellsInXAxis)));
+                        }
+                        break;
+                    case 3:
+                        cells.add(getCell(cellID));
+                        if (hasRight(cellID)) {
+                            cells.add(getCell(cellID + 1));
+                        }
+                        if (hasTop(cellID)) {
+                            cells.add(getCell((cellID + cellsInXAxis)));
+                        }
+                        if (hasTop(cellID) && hasRight(cellID)) {
+                            cells.add(getCell((cellID + cellsInXAxis) + 1));
+                        }
+                        break;
+                    default:
+                        try {
+                            throw new Exception("");
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
                 }
-            }
 
-            List<Cell> cells = new ArrayList<>();
-            if (bottomLeft && hasBottom(cellID) && hasLeft(cellID)) {
-                cells.add(getCell((cellID - cellsInXAxis) - 1l));
-            }
+                    int[] cellsIdReference;
+                    if(cells.size()==4){
+                        cellsIdReference = new int[2];
+                        cellsIdReference[0] = cellToId(cells.get(0));
+                        cellsIdReference[1] = cellToId(cells.get(2));
+                    }else if(cells.size()==2){
+                        cellsIdReference = new int[2];
+                        cellsIdReference[0] = cellToId(cells.get(0));
+                        cellsIdReference[1] = cellToId(cells.get(1));
+                    }else if(cells.size()==1){
+                        cellsIdReference = new int[1];
+                        cellsIdReference[0] = cellToId(cells.get(0));
+                    }
+                    else{
+                        try {
+                            throw new Exception("Cell size list should have at least one element.");
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
 
-            if ((bottomLeft || bottomRight) && hasBottom(cellID)) {
-                cells.add(getCell((cellID - cellsInXAxis)));
-            }
-
-            if (bottomRight && hasBottom(cellID) && hasRight(cellID)) {
-                cells.add(getCell((cellID - cellsInXAxis) + 1l));
-            }
-
-            if ((bottomLeft || topLeft) && hasLeft(cellID)) {
-                cells.add(getCell((cellID - 1l)));
-            }
-
-            //add plain here
-            cells.add(getCell(cellID));
-
-            if ((bottomRight || topRight) && hasRight(cellID)) {
-                cells.add(getCell(cellID + 1l));
-            }
-
-            if (topLeft && hasTop(cellID) && hasLeft(cellID)) {
-                cells.add(getCell((cellID + cellsInXAxis) - 1l));
-            }
-
-            if ((topLeft || topRight) && hasTop(cellID)) {
-                cells.add(getCell((cellID + cellsInXAxis)));
-            }
-
-            if (topRight && hasTop(cellID) && hasRight(cellID)) {
-                cells.add(getCell((cellID + cellsInXAxis) + 1l));
-            }
-            //Agreements<Cell> agreements = Agreements.newAgreements(cells, Functions.function);
-
-            Agreements<Cell> agreements = Agreements.newAgreements(cells, point, function);
-            agreements.createEdges();
-            this.agreements.put(point, agreements);
-            return agreements;
-        }
+                    Agreements aggr = Agreements.newAgreements(cells.size(), cellsIdReference/*cells.stream().mapToInt(this::cellToId).toArray()*/, cells, point, function);
+                    if(!aggr.haveAllSameType()) {
+                        aggr.createEdges();
+                    }
+                    return  aggr;
+                });
     }
+
+//    private Agreements getAgreements(int cellID, Point point, int index){
+////            if (agreements.containsKey(point)) {
+////                return agreements.get(point);
+////            } else {
+//
+//////                return getAgreementsSingleThread(cellID, point);
+////                List<Cell> cells = new ArrayList<>();
+////
+////                switch (index){
+////                    case 0:
+////                        if (hasBottom(cellID) && hasLeft(cellID)) {
+////                            cells.add(getCell((cellID - cellsInXAxis) - 1));
+////                        }
+////                        if (hasBottom(cellID)) {
+////                            cells.add(getCell((cellID - cellsInXAxis)));
+////                        }
+////                        if (hasLeft(cellID)) {
+////                            cells.add(getCell((cellID - 1)));
+////                        }
+////                        cells.add(getCell(cellID));
+////                        break;
+////                    case 1:
+////                        if (hasBottom(cellID)) {
+////                            cells.add(getCell((cellID - cellsInXAxis)));
+////                        }
+////                        if (hasBottom(cellID) && hasRight(cellID)) {
+////                            cells.add(getCell((cellID - cellsInXAxis) + 1));
+////                        }
+////                        cells.add(getCell(cellID));
+////                        if (hasRight(cellID)) {
+////                            cells.add(getCell(cellID + 1));
+////                        }
+////                        break;
+////                    case 2:
+////                        if (hasLeft(cellID)) {
+////                            cells.add(getCell((cellID - 1)));
+////                        }
+////                        cells.add(getCell(cellID));
+////                        if (hasTop(cellID) && hasLeft(cellID)) {
+////                            cells.add(getCell((cellID + cellsInXAxis) - 1));
+////                        }
+////
+////                        if (hasTop(cellID)) {
+////                            cells.add(getCell((cellID + cellsInXAxis)));
+////                        }
+////                        break;
+////                    case 3:
+////                        cells.add(getCell(cellID));
+////                        if (hasRight(cellID)) {
+////                            cells.add(getCell(cellID + 1));
+////                        }
+////                        if (hasTop(cellID)) {
+////                            cells.add(getCell((cellID + cellsInXAxis)));
+////                        }
+////                        if (hasTop(cellID) && hasRight(cellID)) {
+////                            cells.add(getCell((cellID + cellsInXAxis) + 1));
+////                        }
+////                        break;
+////                    default:
+////                        try {
+////                            throw new Exception("");
+////                        } catch (Exception e) {
+////                            throw new RuntimeException(e);
+////                        }
+////                }
+////
+////                Agreements<Cell> agreements = Agreements.newAgreements(cells, point, function);
+////                this.agreements.put(point, agreements);
+////                return agreements;
+//
+//        return agreements.computeIfAbsent(point, (p)->{
+//
+//            List<Cell> cells = new ArrayList<>();
+//
+//            switch (index){
+//                case 0:
+//                    if (hasBottom(cellID) && hasLeft(cellID)) {
+//                        cells.add(getCell((cellID - cellsInXAxis) - 1));
+//                    }
+//                    if (hasBottom(cellID)) {
+//                        cells.add(getCell((cellID - cellsInXAxis)));
+//                    }
+//                    if (hasLeft(cellID)) {
+//                        cells.add(getCell((cellID - 1)));
+//                    }
+//                    cells.add(getCell(cellID));
+//                    break;
+//                case 1:
+//                    if (hasBottom(cellID)) {
+//                        cells.add(getCell((cellID - cellsInXAxis)));
+//                    }
+//                    if (hasBottom(cellID) && hasRight(cellID)) {
+//                        cells.add(getCell((cellID - cellsInXAxis) + 1));
+//                    }
+//                    cells.add(getCell(cellID));
+//                    if (hasRight(cellID)) {
+//                        cells.add(getCell(cellID + 1));
+//                    }
+//                    break;
+//                case 2:
+//                    if (hasLeft(cellID)) {
+//                        cells.add(getCell((cellID - 1)));
+//                    }
+//                    cells.add(getCell(cellID));
+//                    if (hasTop(cellID) && hasLeft(cellID)) {
+//                        cells.add(getCell((cellID + cellsInXAxis) - 1));
+//                    }
+//
+//                    if (hasTop(cellID)) {
+//                        cells.add(getCell((cellID + cellsInXAxis)));
+//                    }
+//                    break;
+//                case 3:
+//                    cells.add(getCell(cellID));
+//                    if (hasRight(cellID)) {
+//                        cells.add(getCell(cellID + 1));
+//                    }
+//                    if (hasTop(cellID)) {
+//                        cells.add(getCell((cellID + cellsInXAxis)));
+//                    }
+//                    if (hasTop(cellID) && hasRight(cellID)) {
+//                        cells.add(getCell((cellID + cellsInXAxis) + 1));
+//                    }
+//                    break;
+//                default:
+//                    try {
+//                        throw new Exception("");
+//                    } catch (Exception e) {
+//                        throw new RuntimeException(e);
+//                    }
+//            }
+//
+//            int[] cellsIdReference;
+//            if(cells.size()==4){
+//                cellsIdReference = new int[2];
+//                cellsIdReference[0] = cellToId(cells.get(0));
+//                cellsIdReference[1] = cellToId(cells.get(2));
+//            }else if(cells.size()==2){
+//                cellsIdReference = new int[2];
+//                cellsIdReference[0] = cellToId(cells.get(0));
+//                cellsIdReference[1] = cellToId(cells.get(1));
+//            }else if(cells.size()==1){
+//                cellsIdReference = new int[1];
+//                cellsIdReference[0] = cellToId(cells.get(0));
+//            }
+//            else{
+//                try {
+//                    throw new Exception("Cell size list should have at least one element.");
+//                } catch (Exception e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//
+//            Agreements aggr = Agreements.newAgreements(cells.size(), cellsIdReference/*cells.stream().mapToInt(this::cellToId).toArray()*/, cells, point, function);
+//            aggr.createEdges();
+//            return aggr;
+//        });
+////            }
+//    }
+
+//    private /*synchronized*/ Agreements getAgreementsSingleThread(int cellID, Point point){;
+////                if (agreements.containsKey(point)) {
+////            return agreements.get(point);
+////        }else {
+//
+////            boolean bottomLeft = false;
+////            boolean bottomRight = false;
+////            boolean topLeft = false;
+////            boolean topRight = false;
+//            List<Cell> cells = new ArrayList<>();
+//
+//            if (getCell(cellID).getRectangle().getLowerBound().equals(point)) {
+////                bottomLeft = true;
+//                if (hasBottom(cellID) && hasLeft(cellID)) {
+//                    cells.add(getCell((cellID - cellsInXAxis) - 1));
+//                }
+//                if (hasBottom(cellID)) {
+//                    cells.add(getCell((cellID - cellsInXAxis)));
+//                }
+//                if (hasLeft(cellID)) {
+//                    cells.add(getCell((cellID - 1)));
+//                }
+//                cells.add(getCell(cellID));
+//
+//
+//            } else if (getCell(cellID).getRectangle().getUpperBound().equals(point)) {
+////                topRight = true;
+//                cells.add(getCell(cellID));
+//                if (hasRight(cellID)) {
+//                    cells.add(getCell(cellID + 1));
+//                }
+//                if (hasTop(cellID)) {
+//                    cells.add(getCell((cellID + cellsInXAxis)));
+//                }
+//                if (hasTop(cellID) && hasRight(cellID)) {
+//                    cells.add(getCell((cellID + cellsInXAxis) + 1));
+//                }
+//
+//            } else if (Double.compare(getCell(cellID).getRectangle().getLowerBound().getX(), point.getX()) == 0 &&
+//                    Double.compare(getCell(cellID).getRectangle().getUpperBound().getY(), point.getY()) == 0) {
+////                topLeft = true;
+//                if (hasLeft(cellID)) {
+//                    cells.add(getCell((cellID - 1)));
+//                }
+//                cells.add(getCell(cellID));
+//                if (hasTop(cellID) && hasLeft(cellID)) {
+//                    cells.add(getCell((cellID + cellsInXAxis) - 1));
+//                }
+//
+//                if (hasTop(cellID)) {
+//                    cells.add(getCell((cellID + cellsInXAxis)));
+//                }
+//
+//            } else if (Double.compare(getCell(cellID).getRectangle().getUpperBound().getX(), point.getX()) == 0 &&
+//                    Double.compare(getCell(cellID).getRectangle().getLowerBound().getY(), point.getY()) == 0) {
+////                bottomRight = true;
+//                if (hasBottom(cellID)) {
+//                    cells.add(getCell((cellID - cellsInXAxis)));
+//                }
+//                if (hasBottom(cellID) && hasRight(cellID)) {
+//                    cells.add(getCell((cellID - cellsInXAxis) + 1));
+//                }
+//                cells.add(getCell(cellID));
+//                if (hasRight(cellID)) {
+//                    cells.add(getCell(cellID + 1));
+//                }
+//
+//            } else {
+//                try {
+//                    throw new Exception("Problem in determining the cell's corner for Agreements creation.");
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//
+////            List<Cell> cells = new ArrayList<>();
+////            if (bottomLeft && hasBottom(cellID) && hasLeft(cellID)) {
+////                cells.add(getCell((cellID - cellsInXAxis) - 1l));
+////            }
+////
+////            if ((bottomLeft || bottomRight) && hasBottom(cellID)) {
+////                cells.add(getCell((cellID - cellsInXAxis)));
+////            }
+////
+////            if (bottomRight && hasBottom(cellID) && hasRight(cellID)) {
+////                cells.add(getCell((cellID - cellsInXAxis) + 1l));
+////            }
+////
+////            if ((bottomLeft || topLeft) && hasLeft(cellID)) {
+////                cells.add(getCell((cellID - 1l)));
+////            }
+////
+////            //add plain here
+////            cells.add(getCell(cellID));
+////
+////            if ((bottomRight || topRight) && hasRight(cellID)) {
+////                cells.add(getCell(cellID + 1l));
+////            }
+////
+////            if (topLeft && hasTop(cellID) && hasLeft(cellID)) {
+////                cells.add(getCell((cellID + cellsInXAxis) - 1l));
+////            }
+////
+////            if ((topLeft || topRight) && hasTop(cellID)) {
+////                cells.add(getCell((cellID + cellsInXAxis)));
+////            }
+////
+////            if (topRight && hasTop(cellID) && hasRight(cellID)) {
+////                cells.add(getCell((cellID + cellsInXAxis) + 1l));
+////            }
+//
+//
+//        int[] cellsIdReference;
+//        if(cells.size()==4){
+//            cellsIdReference = new int[2];
+//            cellsIdReference[0] = cellToId(cells.get(0));
+//            cellsIdReference[1] = cellToId(cells.get(2));
+//        }else if(cells.size()==2){
+//            cellsIdReference = new int[2];
+//            cellsIdReference[0] = cellToId(cells.get(0));
+//            cellsIdReference[1] = cellToId(cells.get(1));
+//        }else if(cells.size()==1){
+//            cellsIdReference = new int[1];
+//            cellsIdReference[0] = cellToId(cells.get(0));
+//        }
+//        else{
+//            try {
+//                throw new Exception("Cell size list should have at least one element.");
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+//
+//            Agreements agreements = Agreements.newAgreements(cells.size(), cellsIdReference, /*cells.stream().mapToInt(this::cellToId).toArray(),*/ cells, point, function);
+//            agreements.createEdges();
+//            this.agreements.putIfAbsent(point, agreements);
+//            return agreements;
+////        }
+//    }
 
 //    private Agreements<Cell> getAgreements(long cellID, Point point){
 //        if (agreements.containsKey(point)) {
@@ -463,11 +887,11 @@ public class Grid {
 //        }
 //    }
 
-    private void forEach(BiConsumer<Long,Rectangle> action){
+    private void forEach(BiConsumer<Integer,Rectangle> action){
         if (action == null) {
             throw new NullPointerException();
         }
-        for(long i=0;i<cellsInXAxis*cellsInYAxis;i++){
+        for(int i=0;i<cellsInXAxis*cellsInYAxis;i++){
             if(cells.containsKey(i)){
                 action.accept(i,getRectangle(i));
             }
@@ -484,101 +908,342 @@ public class Grid {
 
     private void addPointDataset(double x, double y, TypeSet typeSet){
         Cell cell = getCell(x, y);
-        cell.addPointToDataset(typeSet, getPositionFunction.apply(cell,x,y,r));
+        cell.addPointToDataset(typeSet, cell.getPosition(x,y,r));//getPositionFunction.apply(cell,x,y,r));
         //getCell(x, y).addPointToDataset(x,y,r,typeSet);
     }
 
-    public String[] getPartitionsAType(double x, double y){
-        return getPartitions(x, y, TypeSet.A);
+//    public int[] getPartitionsAType(double x, double y){
+//        return getPartitions(x, y, TypeSet.A);
+//    }
+//
+//    public int[] getPartitionsBType(double x, double y){
+//        return getPartitions(x, y, TypeSet.B);
+//    }
+
+    public int[] getPartitionsATypeInExecutor(double x, double y){
+        return getPartitionsInExecutor(x, y, TypeSet.A);
     }
 
-    public String[] getPartitionsBType(double x, double y){
-        return getPartitions(x, y, TypeSet.B);
+    public int[] getPartitionsBTypeInExecutor(double x, double y){
+        return getPartitionsInExecutor(x, y, TypeSet.B);
     }
 
-    private List<Cell> getPartitions(Cell cell, long cellID, Agreements<Cell> agreements, Position position, TypeSet typeSet){
-        List<Cell> list;
+//    private List<Cell> getPartitions(Cell cell, long cellID, Agreements<Cell> agreements, Position position, TypeSet typeSet){
+//        List<Cell> list;
+//        switch(position){
+//            case TOP:
+//                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID + cellsInXAxis)), typeSet);
+//                break;
+//            case BOTTOM:
+//                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID - cellsInXAxis)), typeSet);
+//                break;
+//            case RIGHT:
+//                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID  + 1)), typeSet);
+//                break;
+//            case LEFT:
+//                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID  - 1)), typeSet);
+//                break;
+//            default:
+//                throw new IllegalStateException("Position was not caught.");
+//        }
+//        return list;
+//    }
+
+//    private void getPartitions(int cellID, Agreements agreements, Position position, TypeSet typeSet, List<Cell> partitions){
+//        switch(position){
+//            case TOP:
+//                agreements.getPartitionsTwoSpacesCase(getCell((cellID + cellsInXAxis)), typeSet, partitions);
+//                break;
+//            case BOTTOM:
+//                agreements.getPartitionsTwoSpacesCase( getCell((cellID - cellsInXAxis)), typeSet, partitions);
+//                break;
+//            case RIGHT:
+//                agreements.getPartitionsTwoSpacesCase(getCell((cellID  + 1)), typeSet, partitions);
+//                break;
+//            case LEFT:
+//                agreements.getPartitionsTwoSpacesCase(getCell((cellID  - 1)), typeSet, partitions);
+//                break;
+//            default:
+//                throw new IllegalStateException("Position was not caught.");
+//        }
+//    }
+
+    private void getPartitions(int cellID, Agreements agreements, Position position, TypeSet typeSet, List<Integer> partitions){
         switch(position){
             case TOP:
-                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID + cellsInXAxis)), typeSet);
+                agreements.getPartitionsTwoSpacesCase((cellID + cellsInXAxis), typeSet, partitions);
                 break;
             case BOTTOM:
-                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID - cellsInXAxis)), typeSet);
+                agreements.getPartitionsTwoSpacesCase((cellID - cellsInXAxis), typeSet, partitions);
                 break;
             case RIGHT:
-                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID  + 1)), typeSet);
+                agreements.getPartitionsTwoSpacesCase((cellID  + 1), typeSet, partitions);
                 break;
             case LEFT:
-                list = agreements.getPartitionsTwoSpacesCase(cell, getCell((cellID  - 1)), typeSet);
+                agreements.getPartitionsTwoSpacesCase((cellID  - 1), typeSet, partitions);
                 break;
             default:
                 throw new IllegalStateException("Position was not caught.");
         }
-        return list;
     }
 
-    private List<Cell> getPartitions(Cell cell, long cellId, Agreements<Cell> agreements, Position position, TypeSet typeSet, boolean outerQuarter){
+//    private List<Cell> getPartitions(Cell cell, long cellId, Agreements<Cell> agreements, Position position, TypeSet typeSet, boolean outerQuarter){
+//        switch (position){
+//            case TOPRIGHT:
+//                if(hasTop(cellId) && hasRight(cellId)){
+//                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
+//                }else if(hasTop(cellId)){
+//                    return getPartitions(cell, cellId, agreements, TOP, typeSet);
+//                }else if(hasRight(cellId)){
+//                    return getPartitions(cell, cellId, agreements, RIGHT, typeSet);
+//                }
+//                break;
+//            case TOPLEFT:
+//                if(hasTop(cellId) && hasLeft(cellId)){
+//                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
+//                }else if(hasTop(cellId)){
+//                    return getPartitions(cell, cellId, agreements, TOP, typeSet);
+//                }else if(hasLeft(cellId)){
+//                    return getPartitions(cell, cellId, agreements, LEFT, typeSet);
+//                }
+//                break;
+//            case BOTTOMRIGHT:
+//                if(hasBottom(cellId) && hasRight(cellId)){
+//                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
+//                }else if(hasBottom(cellId)){
+//                    return getPartitions(cell, cellId, agreements, BOTTOM, typeSet);
+//                }else if(hasRight(cellId)){
+//                    return getPartitions(cell, cellId, agreements, RIGHT, typeSet);
+//                }
+//                break;
+//            case BOTTOMLEFT:
+//                if(hasBottom(cellId) && hasLeft(cellId)){
+//                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
+//                }else if(hasBottom(cellId)){
+//                    return getPartitions(cell, cellId, agreements, BOTTOM, typeSet);
+//                }else if(hasLeft(cellId)){
+//                    return getPartitions(cell, cellId, agreements, LEFT, typeSet);
+//                }
+//                break;
+//            default:
+//                throw new IllegalStateException("Position was not caught.");
+//        }
+//        List<Cell> partitions = new ArrayList<>();
+//        partitions.add(cell);
+//        return partitions;
+//        //return Collections.singletonList(cell);
+//    }
+
+//    private void getPartitions(int cellId, Agreements agreements, Position position, TypeSet typeSet, boolean outerQuarter, List<Cell> partitions){
+//        switch (position){
+//            case TOPRIGHT:
+////                if(agreements.getSpacesNum()==4){
+//                    agreements.getPartitionsFourSpacesCase(0, typeSet, outerQuarter, partitions);
+////                }else if(hasTop(cellId)){
+////                    getPartitions(cellId, agreements, TOP, typeSet, partitions);
+////                }else if(hasRight(cellId)){
+////                    getPartitions(cellId, agreements, RIGHT, typeSet, partitions);
+////                }
+//                break;
+//            case TOPLEFT:
+////                if(agreements.getSpacesNum()==4){
+//                    agreements.getPartitionsFourSpacesCase(1, typeSet, outerQuarter, partitions);
+////                }else if(hasTop(cellId)){
+////                    getPartitions(cellId, agreements, TOP, typeSet, partitions);
+////                }else if(hasLeft(cellId)){
+////                    getPartitions(cellId, agreements, LEFT, typeSet, partitions);
+////                }
+//                break;
+//            case BOTTOMRIGHT:
+////                if(agreements.getSpacesNum()==4){
+//                    agreements.getPartitionsFourSpacesCase(2, typeSet, outerQuarter, partitions);
+////                }else if(hasBottom(cellId)){
+////                    getPartitions(cellId, agreements, BOTTOM, typeSet, partitions);
+////                }else if(hasRight(cellId)){
+////                    getPartitions(cellId, agreements, RIGHT, typeSet, partitions);
+////                }
+//                break;
+//            case BOTTOMLEFT:
+////                if(agreements.getSpacesNum()==4){
+//                    agreements.getPartitionsFourSpacesCase(3, typeSet, outerQuarter, partitions);
+////                }else if(hasBottom(cellId)){
+////                    getPartitions(cellId, agreements, BOTTOM, typeSet, partitions);
+////                }else if(hasLeft(cellId)){
+////                    getPartitions(cellId, agreements, LEFT, typeSet, partitions);
+////                }
+//                break;
+//            default:
+//                throw new IllegalStateException("Position was not caught.");
+//        }
+//    }
+
+    private void getPartitions(int cellId, Agreements agreements, Position position, TypeSet typeSet, boolean outerQuarter, List<Integer> partitions){
         switch (position){
             case TOPRIGHT:
-                if(hasTop(cellId) && hasRight(cellId)){
-                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
-                }else if(hasTop(cellId)){
-                    return getPartitions(cell, cellId, agreements, TOP, typeSet);
-                }else if(hasRight(cellId)){
-                    return getPartitions(cell, cellId, agreements, RIGHT, typeSet);
-                }
+//                if(agreements.getSpacesNum()==4){
+                agreements.getPartitionsFourSpacesCase(0, typeSet, outerQuarter, partitions);
+//                }else if(hasTop(cellId)){
+//                    getPartitions(cellId, agreements, TOP, typeSet, partitions);
+//                }else if(hasRight(cellId)){
+//                    getPartitions(cellId, agreements, RIGHT, typeSet, partitions);
+//                }
                 break;
             case TOPLEFT:
-                if(hasTop(cellId) && hasLeft(cellId)){
-                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
-                }else if(hasTop(cellId)){
-                    return getPartitions(cell, cellId, agreements, TOP, typeSet);
-                }else if(hasLeft(cellId)){
-                    return getPartitions(cell, cellId, agreements, LEFT, typeSet);
-                }
+//                if(agreements.getSpacesNum()==4){
+                agreements.getPartitionsFourSpacesCase(1, typeSet, outerQuarter, partitions);
+//                }else if(hasTop(cellId)){
+//                    getPartitions(cellId, agreements, TOP, typeSet, partitions);
+//                }else if(hasLeft(cellId)){
+//                    getPartitions(cellId, agreements, LEFT, typeSet, partitions);
+//                }
                 break;
             case BOTTOMRIGHT:
-                if(hasBottom(cellId) && hasRight(cellId)){
-                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
-                }else if(hasBottom(cellId)){
-                    return getPartitions(cell, cellId, agreements, BOTTOM, typeSet);
-                }else if(hasRight(cellId)){
-                    return getPartitions(cell, cellId, agreements, RIGHT, typeSet);
-                }
+//                if(agreements.getSpacesNum()==4){
+                agreements.getPartitionsFourSpacesCase(2, typeSet, outerQuarter, partitions);
+//                }else if(hasBottom(cellId)){
+//                    getPartitions(cellId, agreements, BOTTOM, typeSet, partitions);
+//                }else if(hasRight(cellId)){
+//                    getPartitions(cellId, agreements, RIGHT, typeSet, partitions);
+//                }
                 break;
             case BOTTOMLEFT:
-                if(hasBottom(cellId) && hasLeft(cellId)){
-                    return agreements.getPartitionsFourSpacesCase(cell, typeSet, outerQuarter);
-                }else if(hasBottom(cellId)){
-                    return getPartitions(cell, cellId, agreements, BOTTOM, typeSet);
-                }else if(hasLeft(cellId)){
-                    return getPartitions(cell, cellId, agreements, LEFT, typeSet);
-                }
+//                if(agreements.getSpacesNum()==4){
+                agreements.getPartitionsFourSpacesCase(3, typeSet, outerQuarter, partitions);
+//                }else if(hasBottom(cellId)){
+//                    getPartitions(cellId, agreements, BOTTOM, typeSet, partitions);
+//                }else if(hasLeft(cellId)){
+//                    getPartitions(cellId, agreements, LEFT, typeSet, partitions);
+//                }
                 break;
             default:
                 throw new IllegalStateException("Position was not caught.");
         }
-        List<Cell> partitions = new ArrayList<>();
-        partitions.add(cell);
-        return partitions;
-        //return Collections.singletonList(cell);
     }
 
-    private List<Cell> checkForExtraPartition(Cell cell, long cellId, Position position1, boolean horizontal1, Position position2, boolean horizontal2, Point point, TypeSet typeSet) {
-        List<Cell> extraCells = new ArrayList<>();
-        Optional<Cell> optional1;
-        Optional<Cell> optional2;
-        if(geoData){
-            optional1 = checkForExtraGeoPartition(cell, cellId, position1, horizontal1, point, typeSet);
-            optional2 = checkForExtraGeoPartition(cell, cellId, position2, horizontal2, point, typeSet);
-        }else{
-            optional1 = checkForExtraPartition(cell, cellId, position1, horizontal1, point, typeSet);
-            optional2 = checkForExtraPartition(cell, cellId, position2, horizontal2, point, typeSet);
-        }
-        optional1.ifPresent(extraCells::add);
-        optional2.ifPresent(extraCells::add);
-        return extraCells;
-    }
+//    private List<Cell> checkForExtraPartition(Cell cell, long cellId, Position position1, boolean horizontal1, Position position2, boolean horizontal2, Point point, TypeSet typeSet) {
+//        List<Cell> extraCells = new ArrayList<>();
+//        Optional<Cell> optional1;
+//        Optional<Cell> optional2;
+//        if(geoData){
+//            optional1 = checkForExtraGeoPartition(cell, cellId, position1, horizontal1, point, typeSet);
+//            optional2 = checkForExtraGeoPartition(cell, cellId, position2, horizontal2, point, typeSet);
+//        }else{
+//            optional1 = checkForExtraPartition(cell, cellId, position1, horizontal1, point, typeSet);
+//            optional2 = checkForExtraPartition(cell, cellId, position2, horizontal2, point, typeSet);
+//        }
+//        optional1.ifPresent(extraCells::add);
+//        optional2.ifPresent(extraCells::add);
+//        return extraCells;
+//    }
+
+//    private void checkForExtraPartitionSuppArea(Cell cell, int cellId, Position position, boolean horizontal1, double x, double y, TypeSet typeSet, List<Cell> list) {
+////        if(!geoData){
+//            checkForExtraPartition(cell, cellId, position, horizontal1, x, y, typeSet, list);
+////        }else{
+////            //checkForExtraGeoPartition(cell, cellId, position, horizontal1, point, typeSet, list);
+////        }
+//    }
+//
+//    private void checkForExtraPartition(Cell cell, int cellId, Position position, boolean horizontal, double x, double y, TypeSet typeSet, List<Cell> partitions) {
+//        int extraCell;
+//        Agreements aggr = null;
+//        switch (position){
+//            case TOPRIGHT:
+//                aggr = getAgreements(cellId, cell.getRectangle().getUpperBound(),3);
+//                if(aggr.getSpacesNum() ==4){
+//                    if(horizontal){
+//                        extraCell = aggr.getExtraPartition(4, 1, 5, typeSet);
+//                    }else{
+//                        extraCell = aggr.getExtraPartition(2, 3, 5, typeSet);
+//                    }
+////                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+//                    if(extraCell!=-1){
+//                        if(horizontal){
+//                            if(Circle.newCircle(cell.getRectangle().getUpperBound().getX()-r,cell.getRectangle().getUpperBound().getY(), r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getUpperBound().getY()-r, r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case TOPLEFT:
+//                aggr = getAgreements(cellId, cell.getRectangle().getUpperLeftBound(),2);
+//                if(aggr.getSpacesNum() ==4){
+//                    if(horizontal){
+//                        extraCell = aggr.getExtraPartition(10, 2, 7, typeSet);
+//                    }else{
+//                        extraCell = aggr.getExtraPartition(1, 7, 9, typeSet);
+//                    }
+////                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperLeftBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+//                    if(extraCell!=-1){
+//                        if(horizontal){
+//                            if(Circle.newCircle(cell.getRectangle().getUpperLeftBound().getX()+r,cell.getRectangle().getUpperLeftBound().getY(), r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(cell.getRectangle().getUpperLeftBound().getX(),cell.getRectangle().getUpperLeftBound().getY()-r, r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case BOTTOMRIGHT:
+//                aggr = getAgreements(cellId, cell.getRectangle().getLowerRightBound(),1);
+//
+//                if(aggr.getSpacesNum() ==4){
+//                    if(horizontal){
+//                        extraCell = aggr.getExtraPartition(3, 8, 11, typeSet);
+//                    }else{
+//                        extraCell = aggr.getExtraPartition(12, 4, 8, typeSet);
+//                    }
+////                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerRightBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+//                    if(extraCell!=-1){
+//                        if(horizontal){
+//                            if(Circle.newCircle(cell.getRectangle().getLowerRightBound().getX()-r,cell.getRectangle().getLowerRightBound().getY(), r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(cell.getRectangle().getLowerRightBound().getX(),cell.getRectangle().getLowerRightBound().getY()+r, r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case BOTTOMLEFT:
+//                aggr = getAgreements(cellId, cell.getRectangle().getLowerBound(),0);
+//
+//                if(aggr.getSpacesNum() ==4){
+//                    if(horizontal){
+//                        extraCell = aggr.getExtraPartition(9, 6, 12, typeSet);
+//                    }else{
+//                        extraCell = aggr.getExtraPartition(11, 6, 10, typeSet);
+//                    }
+////                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+//                    if(extraCell!=-1){
+//                        if(horizontal){
+//                            if(Circle.newCircle(cell.getRectangle().getLowerBound().getX()+r,cell.getRectangle().getLowerBound().getY(), r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getLowerBound().getY()+r, r).containsInclusive(x, y)){
+//                                partitions.add(getCell(extraCell));
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            default:
+//                throw new IllegalStateException("Position was not caught.");
+//        }
+//    }
+
+
 
 //    private Optional<Cell> checkForExtraGeoPartition(Cell cell, long cellId, Position position, boolean horizontal, Point point, TypeSet typeSet) {
 //        switch (position){
@@ -652,86 +1317,86 @@ public class Grid {
 //        return Optional.empty();
 //    }
 
-        private Optional<Cell> checkForExtraGeoPartition(Cell cell, long cellId, Position position, boolean horizontal, Point point, TypeSet typeSet) {
-        switch (position){
-            case TOPRIGHT:
-                if(hasTop(cellId) && hasRight(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX()-(r/(Math.cos(Math.toRadians(rectangle.getUpperBound().getY())) * 111.321)),cell.getRectangle().getUpperBound().getY()), r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getUpperBound().getY()), 2*r).containsInclusiveHaversine(point)){
+//        private Optional<Cell> checkForExtraGeoPartition(Cell cell, long cellId, Position position, boolean horizontal, Point point, TypeSet typeSet) {
+//        switch (position){
+//            case TOPRIGHT:
+//                if(hasTop(cellId) && hasRight(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX()-(r/(Math.cos(Math.toRadians(rectangle.getUpperBound().getY())) * 111.321)),cell.getRectangle().getUpperBound().getY()), r).containsInclusiveHaversine(point)){
 //                                return extraCell;
 //                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getUpperBound().getY()-(r/110.574)), r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            case TOPLEFT:
-                if(hasTop(cellId) && hasLeft(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperLeftBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX()+(r/(Math.cos(Math.toRadians(rectangle.getUpperLeftBound().getY())) * 111.321)),cell.getRectangle().getUpperLeftBound().getY()), r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX(),cell.getRectangle().getUpperLeftBound().getY()), 2*r).containsInclusiveHaversine(point)){
+////                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getUpperBound().getY()), 2*r).containsInclusiveHaversine(point)){
+////                                return extraCell;
+////                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getUpperBound().getY()-(r/110.574)), r).containsInclusiveHaversine(point)){
 //                                return extraCell;
 //                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX(),cell.getRectangle().getUpperLeftBound().getY()-(r/110.574)), r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            case BOTTOMRIGHT:
-                if(hasBottom(cellId) && hasRight(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerRightBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX(),cell.getRectangle().getLowerRightBound().getY()), 2*r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX(),cell.getRectangle().getLowerRightBound().getY()+(r/110.574)), r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            case BOTTOMLEFT:
-                if(hasBottom(cellId) && hasLeft(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX()+(r/(Math.cos(Math.toRadians(rectangle.getLowerBound().getY())) * 111.321)),cell.getRectangle().getLowerBound().getY()), r).containsInclusiveHaversine(point)){
+//                        }
+//                    }
+//                }
+//                break;
+//            case TOPLEFT:
+//                if(hasTop(cellId) && hasLeft(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperLeftBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX()+(r/(Math.cos(Math.toRadians(rectangle.getUpperLeftBound().getY())) * 111.321)),cell.getRectangle().getUpperLeftBound().getY()), r).containsInclusiveHaversine(point)){
 //                                return extraCell;
 //                            }
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getLowerBound().getY()), 2*r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getLowerBound().getY()+(r/110.574)), r).containsInclusiveHaversine(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            default:
-                throw new IllegalStateException("Position was not caught.");
-        }
-        return Optional.empty();
-    }
+////                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX(),cell.getRectangle().getUpperLeftBound().getY()), 2*r).containsInclusiveHaversine(point)){
+////                                return extraCell;
+////                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX(),cell.getRectangle().getUpperLeftBound().getY()-(r/110.574)), r).containsInclusiveHaversine(point)){
+//                                return extraCell;
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case BOTTOMRIGHT:
+//                if(hasBottom(cellId) && hasRight(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerRightBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX(),cell.getRectangle().getLowerRightBound().getY()), 2*r).containsInclusiveHaversine(point)){
+//                                return extraCell;
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX(),cell.getRectangle().getLowerRightBound().getY()+(r/110.574)), r).containsInclusiveHaversine(point)){
+//                                return extraCell;
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case BOTTOMLEFT:
+//                if(hasBottom(cellId) && hasLeft(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+////                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX()+(r/(Math.cos(Math.toRadians(rectangle.getLowerBound().getY())) * 111.321)),cell.getRectangle().getLowerBound().getY()), r).containsInclusiveHaversine(point)){
+////                                return extraCell;
+////                            }
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getLowerBound().getY()), 2*r).containsInclusiveHaversine(point)){
+//                                return extraCell;
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getLowerBound().getY()+(r/110.574)), r).containsInclusiveHaversine(point)){
+//                                return extraCell;
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            default:
+//                throw new IllegalStateException("Position was not caught.");
+//        }
+//        return Optional.empty();
+//    }
 
 //    private Optional<Cell> checkForExtraGeoPartition(Cell cell, long cellId, Position position, boolean horizontal, Point point, TypeSet typeSet) {
 //        switch (position){
@@ -782,196 +1447,232 @@ public class Grid {
 //        return Optional.empty();
 //    }
 
-    private Optional<Cell> checkForExtraPartition(Cell cell, long cellId, Position position, boolean horizontal, Point point, TypeSet typeSet) {
-        switch (position){
-            case TOPRIGHT:
-                if(hasTop(cellId) && hasRight(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX()-r,cell.getRectangle().getUpperBound().getY()), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getUpperBound().getY()-r), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            case TOPLEFT:
-                if(hasTop(cellId) && hasLeft(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperLeftBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX()+r,cell.getRectangle().getUpperLeftBound().getY()), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX(),cell.getRectangle().getUpperLeftBound().getY()-r), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            case BOTTOMRIGHT:
-                if(hasBottom(cellId) && hasRight(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerRightBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX()-r,cell.getRectangle().getLowerRightBound().getY()), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX(),cell.getRectangle().getLowerRightBound().getY()+r), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            case BOTTOMLEFT:
-                if(hasBottom(cellId) && hasLeft(cellId)){
-                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
-                    if(extraCell.isPresent()){
-                        if(horizontal){
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX()+r,cell.getRectangle().getLowerBound().getY()), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }else{
-                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getLowerBound().getY()+r), r).containsInclusive(point)){
-                                return extraCell;
-                            }
-                        }
-                    }
-                }
-                break;
-            default:
-                throw new IllegalStateException("Position was not caught.");
-        }
-        return Optional.empty();
-    }
+//    private Optional<Cell> checkForExtraPartition(Cell cell, long cellId, Position position, boolean horizontal, Point point, TypeSet typeSet) {
+//        switch (position){
+//            case TOPRIGHT:
+//                if(hasTop(cellId) && hasRight(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX()-r,cell.getRectangle().getUpperBound().getY()), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getUpperBound().getY()-r), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case TOPLEFT:
+//                if(hasTop(cellId) && hasLeft(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperLeftBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX()+r,cell.getRectangle().getUpperLeftBound().getY()), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getUpperLeftBound().getX(),cell.getRectangle().getUpperLeftBound().getY()-r), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case BOTTOMRIGHT:
+//                if(hasBottom(cellId) && hasRight(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerRightBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX()-r,cell.getRectangle().getLowerRightBound().getY()), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerRightBound().getX(),cell.getRectangle().getLowerRightBound().getY()+r), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case BOTTOMLEFT:
+//                if(hasBottom(cellId) && hasLeft(cellId)){
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+//                    if(extraCell.isPresent()){
+//                        if(horizontal){
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX()+r,cell.getRectangle().getLowerBound().getY()), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }else{
+//                            if(Circle.newCircle(Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getLowerBound().getY()+r), r).containsInclusive(point)){
+//                                return extraCell;
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            default:
+//                throw new IllegalStateException("Position was not caught.");
+//        }
+//        return Optional.empty();
+//    }
 
-    private String[] getPartitions(double x, double y, TypeSet typeSet){
-        long cellID = getCellId(x,y);
-        Cell cell = getCell(cellID);
-
-        List<Cell> partitions = null;
-        //System.out.println(getCell(4371246).getRectangle().toString());
-        switch(getPositionFunction.apply(cell, x, y, r)){
-        //switch(cell.getPosition(x, y, r)){
-            case PLAIN:
-                partitions = new ArrayList<>();
-                partitions.add(cell);
-                //System.out.println(x+","+y);
-                break;
-            case TOPRIGHTQUARTER:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, cell.getRectangle().getUpperBound()), TOPRIGHT, typeSet, false);
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPLEFT, true, BOTTOMRIGHT, false, Point.newPoint(x,y), typeSet));
-                break;
-            case TOPLEFTQUARTER:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getUpperBound().getY())), TOPLEFT, typeSet, false);
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPRIGHT, true, BOTTOMLEFT, false, Point.newPoint(x,y), typeSet));
-                break;
-            case BOTTOMRIGHTQUARTER:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getLowerBound().getY())), BOTTOMRIGHT, typeSet, false);
-                partitions.addAll(checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, TOPRIGHT, false, Point.newPoint(x,y), typeSet));
-                break;
-            case BOTTOMLEFTQUARTER:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, cell.getRectangle().getLowerBound()), BOTTOMLEFT, typeSet, false);
-                partitions.addAll(checkForExtraPartition(cell, cellID, BOTTOMRIGHT, true, TOPLEFT, false, Point.newPoint(x,y), typeSet));
-                break;
-            case TOPRIGHT:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, cell.getRectangle().getUpperBound()), TOPRIGHT, typeSet, true);
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPLEFT, true, BOTTOMRIGHT, false, Point.newPoint(x,y), typeSet));
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPRIGHT, true, TOPRIGHT, false, Point.newPoint(x,y), typeSet));
-
-                break;
-            case TOPLEFT:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, Point.newPoint(cell.getRectangle().getLowerBound().getX(),cell.getRectangle().getUpperBound().getY())), TOPLEFT, typeSet, true);
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPRIGHT, true, BOTTOMLEFT, false, Point.newPoint(x,y), typeSet));
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPLEFT, true, TOPLEFT, false, Point.newPoint(x,y), typeSet));
-
-                break;
-            case BOTTOMRIGHT:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, Point.newPoint(cell.getRectangle().getUpperBound().getX(),cell.getRectangle().getLowerBound().getY())), BOTTOMRIGHT, typeSet, true);
-                partitions.addAll(checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, TOPRIGHT, false, Point.newPoint(x,y), typeSet));
-                partitions.addAll(checkForExtraPartition(cell, cellID, BOTTOMRIGHT, true, BOTTOMRIGHT, false, Point.newPoint(x,y), typeSet));
-
-                break;
-            case BOTTOMLEFT:
-                partitions = getPartitions(cell, cellID, getAgreements(cellID, cell.getRectangle().getLowerBound()), BOTTOMLEFT, typeSet, true);
-                partitions.addAll(checkForExtraPartition(cell, cellID, BOTTOMRIGHT, true, TOPLEFT, false, Point.newPoint(x,y), typeSet));
-                partitions.addAll(checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, BOTTOMLEFT, false, Point.newPoint(x,y), typeSet));
-
-                break;
-            case TOP:
-                if(hasTop(cellID)){
-                    partitions = getAgreements(cellID, cell.getRectangle().getUpperBound()).getPartitions(cell, getCell((cellID + cellsInXAxis)), typeSet);
-                }else{
-                    partitions = new ArrayList<>();
-                    partitions.add(cell);
-//                    partitions = Collections.singletonList(cell);
-                }
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPLEFT, true, TOPRIGHT, true, Point.newPoint(x,y), typeSet));
-                break;
-            case BOTTOM:
-                if(hasBottom(cellID)){
-                    partitions = getAgreements(cellID, cell.getRectangle().getLowerBound()).getPartitions(cell, getCell((cellID - cellsInXAxis)), typeSet);
-                }else{
-                    partitions = new ArrayList<>();
-                    partitions.add(cell);
-//                    partitions = Collections.singletonList(cell);
-                }
-                partitions.addAll(checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, BOTTOMRIGHT, true, Point.newPoint(x,y), typeSet));
-                break;
-            case RIGHT:
-                if(hasRight(cellID)){
-                    partitions = getAgreements(cellID, cell.getRectangle().getUpperBound()).getPartitions(cell, getCell((cellID  + 1)), typeSet);
-                }else{
-                    partitions = new ArrayList<>();
-                    partitions.add(cell);
-//                    partitions = Collections.singletonList(cell);
-                }
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPRIGHT, false, BOTTOMRIGHT, false, Point.newPoint(x,y), typeSet));
-
-                break;
-            case LEFT:
-                if(hasLeft(cellID)){
-                    partitions = getAgreements(cellID, cell.getRectangle().getLowerBound()).getPartitions(cell, getCell((cellID  - 1)), typeSet);
-                }else{
-                    partitions = new ArrayList<>();
-                    partitions.add(cell);
-//                    partitions = Collections.singletonList(cell);
-                }
-                partitions.addAll(checkForExtraPartition(cell, cellID, TOPLEFT, false, BOTTOMLEFT, false, Point.newPoint(x,y), typeSet));
-
-                break;
-            default: throw new RuntimeException("No correct position");
-        }
-        return Arrays.stream(getPartitionsId(partitions)).distinct().toArray(String[]::new);
-    }
+//    private int[] getPartitions(double x, double y, TypeSet typeSet){
+//        return null;
+////        int cellID = getCellId(x,y);
+////        Cell cell = getCell(cellID);
+////
+////        List<Cell> partitions = new ArrayList<>();
+////        partitions.add(cell);
+////        Agreements aggr = null;
+////        switch(cell.getPosition(x,y,r)){
+////            case PLAIN:
+////                break;
+////            case TOPRIGHTQUARTER:
+////                aggr = getAgreements(cellID, cell.getRectangle().getUpperBound(),3);
+////                if(aggr.getSpacesNum()==4){
+////                    getPartitions(cellID, aggr, TOPRIGHT, typeSet, false, partitions);
+////                }else if(hasTop(cellID)){
+////                    getPartitions(cellID, aggr, TOP, typeSet, partitions);
+////                }else if(hasRight(cellID)){
+////                    getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+////                }
+////                checkForExtraPartitionSuppArea(cell, cellID, TOPLEFT, true, x,y, typeSet, partitions);
+////                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMRIGHT, false, x,y, typeSet, partitions);
+////                break;
+////            case TOPLEFTQUARTER:
+////                aggr = getAgreements(cellID, Point.newPoint(cell.getRectangle().getLowerBound().getX(), cell.getRectangle().getUpperBound().getY()),2);
+////                if(aggr.getSpacesNum()==4) {
+////                    getPartitions(cellID, aggr, TOPLEFT, typeSet, false, partitions);
+////                }else if(hasTop(cellID)){
+////                    getPartitions(cellID, aggr, TOP, typeSet, partitions);
+////                }else if(hasLeft(cellID)){
+////                    getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+////                }
+////                checkForExtraPartitionSuppArea(cell, cellID, TOPRIGHT, true, x, y, typeSet, partitions);
+////                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMLEFT, false, x, y, typeSet, partitions);
+////                break;
+////            case BOTTOMRIGHTQUARTER:
+////                aggr = getAgreements(cellID, Point.newPoint(cell.getRectangle().getUpperBound().getX(), cell.getRectangle().getLowerBound().getY()),1);
+////                if(aggr.getSpacesNum()==4) {
+////                    getPartitions(cellID, aggr, BOTTOMRIGHT, typeSet, false, partitions);
+////                } else if(hasBottom(cellID)){
+////                    getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+////                }else if(hasRight(cellID)){
+////                    getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+////                }
+////                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMLEFT, true, x, y, typeSet, partitions);
+////                checkForExtraPartitionSuppArea(cell, cellID, TOPRIGHT, false, x, y, typeSet, partitions);
+////                break;
+////            case BOTTOMLEFTQUARTER:
+////                aggr = getAgreements(cellID, cell.getRectangle().getLowerBound(),0);
+////                if(aggr.getSpacesNum()==4) {
+////                    getPartitions(cellID, aggr, BOTTOMLEFT, typeSet, false, partitions);
+////                }else if(hasBottom(cellID)){
+////                    getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+////                }else if(hasLeft(cellID)){
+////                    getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+////                }
+////                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMRIGHT, true, x, y, typeSet, partitions);
+////                checkForExtraPartitionSuppArea(cell, cellID, TOPLEFT, false, x, y, typeSet, partitions);
+////                break;
+////            case TOPRIGHT:
+////                aggr = getAgreements(cellID, cell.getRectangle().getUpperBound(),3);
+////                if(aggr.getSpacesNum()==4) {
+////                    getPartitions(cellID, aggr, TOPRIGHT, typeSet, true, partitions);
+////                }else if(hasTop(cellID)){
+////                    getPartitions(cellID, aggr, TOP, typeSet, partitions);
+////                }else if(hasRight(cellID)){
+////                    getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, TOPLEFT, true, x, y, typeSet, partitions);
+////                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, false, x, y, typeSet, partitions);
+////                break;
+////            case TOPLEFT:
+////                aggr = getAgreements(cellID, Point.newPoint(cell.getRectangle().getLowerBound().getX(), cell.getRectangle().getUpperBound().getY()),2);
+////                if(aggr.getSpacesNum()==4) {
+////                    getPartitions(cellID, aggr, TOPLEFT, typeSet, true, partitions);
+////                }else if(hasTop(cellID)){
+////                    getPartitions(cellID, aggr, TOP, typeSet, partitions);
+////                }else if(hasLeft(cellID)){
+////                    getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, TOPRIGHT, true, x, y, typeSet, partitions);
+////                checkForExtraPartition(cell, cellID, BOTTOMLEFT, false, x, y, typeSet, partitions);
+////                break;
+////            case BOTTOMRIGHT:
+////                aggr = getAgreements(cellID, Point.newPoint(cell.getRectangle().getUpperBound().getX(), cell.getRectangle().getLowerBound().getY()),1);
+////                if(aggr.getSpacesNum()==4) {
+////                    getPartitions(cellID, aggr, BOTTOMRIGHT, typeSet, true, partitions);
+////                }else if(hasBottom(cellID)){
+////                    getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+////                }else if(hasRight(cellID)){
+////                    getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, x, y, typeSet, partitions);
+////                checkForExtraPartition(cell, cellID, TOPRIGHT, false, x, y, typeSet, partitions);
+////                    break;
+////            case BOTTOMLEFT:
+////                aggr = getAgreements(cellID, cell.getRectangle().getLowerBound(),0);
+////                if(aggr.getSpacesNum()==4) {
+////                    getPartitions(cellID, aggr, BOTTOMLEFT, typeSet, true, partitions);
+////                }else if(hasBottom(cellID)){
+////                    getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+////                }else if(hasLeft(cellID)){
+////                    getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, true, x, y, typeSet, partitions);
+////                checkForExtraPartition(cell, cellID, TOPLEFT, false, x, y, typeSet, partitions);
+////                    break;
+////            case TOP:
+////                if(hasTop(cellID)){
+////                    getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getPartitionsNEW(0, 2, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, TOPLEFT, true, x,y, typeSet,partitions);
+////                checkForExtraPartition(cell, cellID, TOPRIGHT, true, x,y, typeSet,partitions);
+////                break;
+////            case BOTTOM:
+////                if(hasBottom(cellID)){
+////                    getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getPartitionsNEW(3, 1, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, x,y, typeSet,partitions);
+////                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, true, x,y, typeSet,partitions);
+////
+////                break;
+////            case RIGHT:
+////                if(hasRight(cellID)){
+////                    getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getPartitionsNEW(0, 1, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, TOPRIGHT, false, x,y, typeSet,partitions);
+////                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, false, x,y, typeSet,partitions);
+////                break;
+////            case LEFT:
+////                if(hasLeft(cellID)){
+////                    getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getPartitionsNEW(3, 2, typeSet, partitions);
+////                }
+////                checkForExtraPartition(cell, cellID, TOPLEFT, false, x,y, typeSet,partitions);
+////                checkForExtraPartition(cell, cellID, BOTTOMLEFT, false, x,y, typeSet,partitions);
+////                break;
+////            default: throw new RuntimeException("No correct position");
+////        }
+////        return getPartitionsId(partitions);
+//    }
 
     private String[] getPartitionsId(List<Cell> cells){
-        //System.out.println(Arrays.toString(cells.toArray()));
         String[] partitions = new String[cells.size()];
         for (int i = 0; i < cells.size(); i++) {
-            //System.out.println(cells.get(i).getRectangle().toString());
-            partitions[i] = String.valueOf(cellToId.apply(cells.get(i)));
+            partitions[i] = String.valueOf(cellToId(cells.get(i)));//String.valueOf(cellToId.apply(cells.get(i)));
         }
         return partitions;
     }
 
-//    private List<Cell> formList(Cell o, Optional<Cell> o1){
-//        List<Cell> partitions = new ArrayList<>();
-//        partitions.add(o);
-//        if(o1.isPresent()){
-//            partitions.add(o1.get());
-//        }
-//        return partitions;
-//    }
+    public int getPartitionId(Cell cell){
+        return cellToId(cell);//String.valueOf(cellToId.apply(cells.get(i)));
+    }
+
+
 //
 //    private Optional<Cell> getPartition(Cell cell, long cellID, TypeSet typeSet, Position position){
 //        Optional o = null;
@@ -1012,13 +1713,13 @@ public class Grid {
 //        return o;
 //    }
 
-    public static Grid newGrid(Rectangle rectangle, long cellsInXAxis, long cellsInYAxis, double r, TriFunction<Cell, Cell, Point, Agreement> function){
+    public static Grid newGrid(Rectangle rectangle, int cellsInXAxis, int cellsInYAxis, double r, /*ReplicationType function*/  Function4<Cell, Cell, Point, Agreement> function){
         System.out.println("Cells in X axis:"+ cellsInXAxis);
         System.out.println("Cells in Y axis:"+ cellsInYAxis);
         return new Grid(rectangle, cellsInXAxis, cellsInYAxis, r, function, false);
     }
 
-    public static Grid newGrid(Rectangle rectangle, double r, TriFunction<Cell, Cell, Point, Agreement> function){
+    public static Grid newGrid(Rectangle rectangle, double r, Function4<Cell, Cell, Point, Agreement> function){
         double cellsInXAxis = ((rectangle.getUpperBound().getX() - rectangle.getLowerBound().getX())/(2*r));
         if(cellsInXAxis%1 ==0){
             cellsInXAxis = cellsInXAxis - 1;
@@ -1027,20 +1728,43 @@ public class Grid {
         if(cellsInYAxis%1 ==0){
             cellsInYAxis = cellsInYAxis - 1;
         }
-        System.out.println("Cells in X axis:"+ (long) cellsInXAxis);
-        System.out.println("Cells in Y axis:"+ (long) cellsInYAxis);
+        System.out.println("Cells in X axis:"+ (int) cellsInXAxis);
+        System.out.println("Cells in Y axis:"+ (int) cellsInYAxis);
 
-
-        return new Grid(rectangle, (long) cellsInXAxis, (long) cellsInYAxis, r, function, false);
+        return new Grid(rectangle, (int) cellsInXAxis, (int) cellsInYAxis, r, function, false);
     }
 
-    public static Grid newGeoGrid(Rectangle rectangle, long cellsInXAxis, long cellsInYAxis, double r, TriFunction<Cell, Cell, Point, Agreement> function){
+    public static Grid newGridStripesX(Rectangle rectangle, double r, Function4<Cell, Cell, Point, Agreement> function){
+        double cellsInXAxis = ((rectangle.getUpperBound().getX() - rectangle.getLowerBound().getX())/(2*r));
+        if(cellsInXAxis%1 ==0){
+            cellsInXAxis = cellsInXAxis - 1;
+        }
+        double cellsInYAxis = 1;
+        System.out.println("Cells in X axis:"+ (int) cellsInXAxis);
+        System.out.println("Cells in Y axis:"+ (int) cellsInYAxis);
+
+        return new Grid(rectangle, (int) cellsInXAxis, (int) cellsInYAxis, r, function, false);
+    }
+
+    public static Grid newGridStripesY(Rectangle rectangle, double r, Function4<Cell, Cell, Point, Agreement> function){
+        double cellsInXAxis = 1;
+        double cellsInYAxis = ((rectangle.getUpperBound().getY() - rectangle.getLowerBound().getY())/(2*r));
+        if(cellsInYAxis%1 ==0){
+            cellsInYAxis = cellsInYAxis - 1;
+        }
+        System.out.println("Cells in X axis:"+ (int) cellsInXAxis);
+        System.out.println("Cells in Y axis:"+ (int) cellsInYAxis);
+
+        return new Grid(rectangle, (int) cellsInXAxis, (int) cellsInYAxis, r, function, false);
+    }
+
+    public static Grid newGeoGrid(Rectangle rectangle, int cellsInXAxis, int cellsInYAxis, double r, /*ReplicationType function*/Function4<Cell, Cell, Point, Agreement> function){
         System.out.println("Cells in X axis:"+ cellsInXAxis);
         System.out.println("Cells in Y axis:"+ cellsInYAxis);
         return new Grid(rectangle, cellsInXAxis, cellsInYAxis, r, function, true);
     }
 
-    public static Grid newGeoGrid(Rectangle rectangle, double r, TriFunction<Cell, Cell, Point, Agreement> function){
+    public static Grid newGeoGrid(Rectangle rectangle, double r, /*ReplicationType function*/Function4<Cell, Cell, Point, Agreement> function){
 
         double northLength = Math.cos(Math.toRadians(rectangle.getUpperBound().getY())) *111.321;
         double southLength = Math.cos(Math.toRadians(rectangle.getLowerBound().getY())) *111.321;
@@ -1062,10 +1786,10 @@ public class Grid {
         if(cellsInYAxis%1 ==0){
             cellsInYAxis = cellsInYAxis - 1;
         }
-        System.out.println("Cells in X axis:"+ (long) cellsInXAxis);
-        System.out.println("Cells in Y axis:"+ (long) cellsInYAxis);
+        System.out.println("Cells in X axis:"+ (int) cellsInXAxis);
+        System.out.println("Cells in Y axis:"+ (int) cellsInYAxis);
 
-        return new Grid(rectangle, (long) cellsInXAxis, (long) cellsInYAxis, r, function ,true);
+        return new Grid(rectangle, (int) cellsInXAxis, (int) cellsInYAxis, r, function ,true);
     }
 
     public long getCellsInXAxis(){
@@ -1184,8 +1908,8 @@ public class Grid {
         agreements.forEach((p,a)->a.checkforsymmetry());
     }
 
-    public HashMap<Long,Long> getCellsWithCosts2(){
-        HashMap<Long,Long> cellsWithCosts = new HashMap<>();
+    public HashMap<Integer,Integer> getCellsWithCosts2(){
+        HashMap<Integer,Integer> cellsWithCosts = new HashMap<>();
 
         cells.forEach((cellId,cell)->{
             if(cell.getNumberOfPointsAType() != 0 && cell.getNumberOfPointsBType() != 0) {
@@ -1195,20 +1919,47 @@ public class Grid {
         return cellsWithCosts;
     }
 
-    public HashMap<Long,Long> getCellsWithCosts1(){
-        HashMap<Long,Long> cellsWithCosts = new HashMap<>();
+    public HashMap<Integer,Integer> getCellsWithCosts1(){
+        long t1 = System.currentTimeMillis();
+        HashMap<Integer, Integer> cellsWithCosts = new HashMap<>();
 
-        cells.forEach((cellID,cell)->{
+//        cells.forEach((k,v)-> {
+//            if(v.getNumberOfPointsAType()  == 0 || (v.getNumberOfPointsBType()) == 0) {
+//                cells.remove(k);
+//            }
+//        });
 
-            if((cell.getNumberOfPointsAType()) != 0 && (cell.getNumberOfPointsBType()) != 0) {
+//        Iterator<Map.Entry<Integer, Cell>> o2 = new HashMap<>(cells).entrySet().parallelStream().iterator();
+//        while(o2.hasNext()) {
+//            Map.Entry<Integer, Cell> entry = o2.next();
+//            if ((entry.getValue().getNumberOfPointsAType()) == 0 || (entry.getValue().getNumberOfPointsBType()) == 0) {
+//                cells.remove(entry.getKey());
+//            }
+//        }
 
-                long extraA = 0;
-                long extraB = 0;
+        List<Integer> cellsIds = new ArrayList<>(cells.size());
+        cells.forEach((a,b)->{
+            cellsIds.add(a);
+        });
+
+//        Iterator<Map.Entry<Integer, Cell>> o = cells.entrySet().iterator();
+//        while(o.hasNext()){
+//            Map.Entry<Integer, Cell> entry = o.next();
+//            int cellID = entry.getKey();
+//            Cell cell = entry.getValue();
+        for (Integer cellsId : cellsIds) {
+            int cellID = cellsId;
+            Cell cell = getCell(cellsId);
+
+//            if((cell.getNumberOfPointsAType()) != 0 && (cell.getNumberOfPointsBType()) != 0) {
+
+                int extraA = 0;
+                int extraB = 0;
 
                 if (hasBottom(cellID) && hasLeft(cellID)) {
-                    Cell cellN = getCell((cellID - cellsInXAxis) - 1l);
-
-                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound()).getEdge(cellN, cell);
+                    Cell cellN = getCell((cellID - cellsInXAxis) - 1);
+                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getEdge((cellID - cellsInXAxis) - 1, cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getEdge(5);
                     if (!e.isEliminated()) {
                         if (e.getTypeSet().equals(TypeSet.A)) {
                             extraA = extraA + cellN.getNumberOfPointsAInTopRightQuarterArea();
@@ -1220,8 +1971,9 @@ public class Grid {
                 }
 
                 if (hasBottom(cellID) && hasRight(cellID)) {
-                    Cell cellN = getCell((cellID - cellsInXAxis) + 1l);
-                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerRightBound()).getEdge(cellN, cell);
+                    Cell cellN = getCell((cellID - cellsInXAxis) + 1);
+                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerRightBound(),1).getEdge((cellID - cellsInXAxis) + 1, cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerRightBound(),1).getEdge(7);
                     if (!e.isEliminated()) {
                         if (e.getTypeSet().equals(TypeSet.A)) {
                             extraA = extraA + cellN.getNumberOfPointsAInTopLeftQuarterArea();
@@ -1233,8 +1985,9 @@ public class Grid {
                 }
 
                 if (hasTop(cellID) && hasLeft(cellID)) {
-                    Cell cellN = getCell((cellID + cellsInXAxis) - 1l);
-                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperLeftBound()).getEdge(cellN, cell);
+                    Cell cellN = getCell((cellID + cellsInXAxis) - 1);
+                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperLeftBound(),2).getEdge((cellID + cellsInXAxis) - 1, cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperLeftBound(),2).getEdge(8);
                     if (!e.isEliminated()) {
                         if (e.getTypeSet().equals(TypeSet.A)) {
                             extraA = extraA + cellN.getNumberOfPointsAInBottomRightQuarterArea();
@@ -1246,8 +1999,9 @@ public class Grid {
                 }
 
                 if (hasTop(cellID) && hasRight(cellID)) {
-                    Cell cellN = getCell((cellID + cellsInXAxis) + 1l);
-                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound()).getEdge(cellN, cell);
+                    Cell cellN = getCell((cellID + cellsInXAxis) + 1);
+                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getEdge((cellID + cellsInXAxis) + 1, cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getEdge(6);
                     if (!e.isEliminated()) {
                         if (e.getTypeSet().equals(TypeSet.A)) {
                             extraA = extraA + cellN.getNumberOfPointsAInBottomLeftQuarterArea();
@@ -1261,9 +2015,10 @@ public class Grid {
 
                 if (hasBottom(cellID)) {
                     Cell cellN = getCell((cellID - cellsInXAxis));
-                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound()).getEdge(cellN, cell);
-                    Edge e1 = getAgreements(cellID, cell.getRectangle().getLowerRightBound()).getEdge(cellN, cell);
-
+                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getEdge((cellID - cellsInXAxis), cellID);
+                    Edge e1 = getAgreements(cellID, cell.getRectangle().getLowerRightBound(),1).getEdge((cellID - cellsInXAxis), cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getEdge(hasLeft(cellID)?9:1);
+//                    Edge e1 = getAgreements(cellID, cell.getRectangle().getLowerRightBound(),1).getEdge(hasRight(cellID)?3:1);
                     if (e.getTypeSet().equals(TypeSet.A)) {
                         extraA = extraA + cellN.getNumberOfPointsAInTopSpecialArea();
                         if (e.isEliminated()) {
@@ -1286,10 +2041,11 @@ public class Grid {
 
 
                 if (hasLeft(cellID)) {
-                    Cell cellN = getCell((cellID - 1l));
-                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound()).getEdge(cellN, cell);
-                    Edge e1 = getAgreements(cellID, cell.getRectangle().getUpperLeftBound()).getEdge(cellN, cell);
-
+                    Cell cellN = getCell((cellID - 1));
+                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getEdge((cellID - 1), cellID);
+                    Edge e1 = getAgreements(cellID, cell.getRectangle().getUpperLeftBound(),2).getEdge((cellID - 1), cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getLowerBound(),0).getEdge(hasBottom(cellID)?11:1);
+//                    Edge e1 = getAgreements(cellID, cell.getRectangle().getUpperLeftBound(),2).getEdge(hasTop(cellID)?1:1);
                     if (e.getTypeSet().equals(TypeSet.A)) {
                         extraA = extraA + cellN.getNumberOfPointsAInRightSpecialArea();
                         if (e.isEliminated()) {
@@ -1311,9 +2067,11 @@ public class Grid {
                 }
 
                 if (hasRight(cellID)) {
-                    Cell cellN = getCell(cellID + 1l);
-                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound()).getEdge(cellN, cell);
-                    Edge e1 = getAgreements(cellID, cell.getRectangle().getLowerRightBound()).getEdge(cellN, cell);
+                    Cell cellN = getCell(cellID + 1);
+                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getEdge(cellID + 1, cellID);
+                    Edge e1 = getAgreements(cellID, cell.getRectangle().getLowerRightBound(),1).getEdge(cellID + 1, cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getEdge(hasTop(cellID)?2:2);
+//                    Edge e1 = getAgreements(cellID, cell.getRectangle().getLowerRightBound(),1).getEdge(hasBottom(cellID)?12:2);
 
                     if (e.getTypeSet().equals(TypeSet.A)) {
                         extraA = extraA + cellN.getNumberOfPointsAInLeftSpecialArea();
@@ -1338,9 +2096,10 @@ public class Grid {
 
                 if (hasTop(cellID)) {
                     Cell cellN = getCell((cellID + cellsInXAxis));
-                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound()).getEdge(cellN, cell);
-                    Edge e1 = getAgreements(cellID, cell.getRectangle().getUpperLeftBound()).getEdge(cellN, cell);
-
+                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getEdge((cellID + cellsInXAxis), cellID);
+                    Edge e1 = getAgreements(cellID, cell.getRectangle().getUpperLeftBound(),2).getEdge((cellID + cellsInXAxis), cellID);
+//                    Edge e = getAgreements(cellID, cell.getRectangle().getUpperBound(),3).getEdge(hasRight(cellID)?4:2);
+//                    Edge e1 = getAgreements(cellID, cell.getRectangle().getUpperLeftBound(),2).getEdge(hasLeft(cellID)?10:2);
                     if (e.getTypeSet().equals(TypeSet.A)) {
                         extraA = extraA + cellN.getNumberOfPointsAInBottomSpecialArea();
                         if (e.isEliminated()) {
@@ -1362,10 +2121,47 @@ public class Grid {
                 }
 
                 if ((cell.getNumberOfPointsAType() + extraA) != 0 && (cell.getNumberOfPointsBType() + extraB) != 0) {
-                    cellsWithCosts.put(cellID, (cell.getNumberOfPointsAType() + extraA) * cell.getNumberOfPointsBType() + extraB);
+                    int k = (cell.getNumberOfPointsAType() + extraA) * (cell.getNumberOfPointsBType() + extraB);
+                    if(k>=1) {
+                        cellsWithCosts.put(cellID, k);
+                    }
+//                    cellsWithCosts.put(cellID, (cell.getNumberOfPointsAType() + extraA) * (cell.getNumberOfPointsBType() + extraB));
+                }
+//                else{
+//                    if(cell.getNumberOfPointsAType() + extraA == 0 && cell.getNumberOfPointsBType() + extraB != 0){
+//                        cellsWithCosts.put(cellID, (cell.getNumberOfPointsBType() + extraB));
+//
+//                    }else if(cell.getNumberOfPointsAType() + extraA != 0 && cell.getNumberOfPointsBType() + extraB == 0){
+//                        cellsWithCosts.put(cellID, cell.getNumberOfPointsAType() + extraA);
+//                    }
+//                }
+//            }
+        }
+
+        System.out.println("Aggrements size was"+agreements.size());
+        Iterator o1 = agreements.entrySet()/*.parallelStream()*/.iterator();
+        while (o1.hasNext()) {
+            Map.Entry<Integer, Agreements> e = (Map.Entry<Integer, Agreements>) o1.next();
+            if(e.getValue().haveAllSameType()){
+                if(e.getValue().hasTypeA()){
+                    o1.remove();
+//                    agreements.remove(e.getKey());
+                }else if(e.getValue().hasTypeB()){
+                    agreements.replace(e.getKey(), null);
+                }else{
+                    try {
+                        throw new Exception("Must have type A or B");
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
-        });
+        }
+
+        System.out.println("Aggrements size is"+agreements.size());
+        cells.clear();
+//        agreements.clear();
+        System.out.println("Time for agreements: "+(System.currentTimeMillis()-t1)/1000);
         return cellsWithCosts;
     }
 
@@ -1484,6 +2280,604 @@ public class Grid {
             //}
         }
         return results;
+    }
+
+    private void getPartitionsWithoutAgreements(int cellID, Position position, List<Integer> partitions){
+        switch (position){
+            case TOPRIGHTQUARTER:
+                if (hasRight(cellID)) {
+                    partitions.add(cellID + 1);
+                }
+                if (hasTop(cellID)) {
+                    partitions.add(cellID + cellsInXAxis);
+                }
+                if (hasTop(cellID) && hasRight(cellID)) {
+                    partitions.add(cellID + cellsInXAxis + 1);
+                }
+                break;
+            case TOPLEFTQUARTER:
+                if (hasLeft(cellID)) {
+                    partitions.add(cellID - 1);
+                }
+                if (hasTop(cellID)) {
+                    partitions.add(cellID + cellsInXAxis);
+                }
+                if (hasTop(cellID) && hasLeft(cellID)) {
+                    partitions.add(cellID + cellsInXAxis - 1);
+                }
+                break;
+            case BOTTOMRIGHTQUARTER:
+                if (hasBottom(cellID)) {
+                    partitions.add(cellID - cellsInXAxis);
+                }
+                if (hasRight(cellID)) {
+                    partitions.add(cellID + 1);
+                }
+                if (hasBottom(cellID) && hasRight(cellID)) {
+                    partitions.add(cellID - cellsInXAxis + 1);
+                }
+                break;
+            case BOTTOMLEFTQUARTER:
+                if (hasBottom(cellID)) {
+                    partitions.add(cellID - cellsInXAxis);
+                }
+                if (hasLeft(cellID)) {
+                    partitions.add(cellID - 1);
+                }
+                if (hasBottom(cellID) && hasLeft(cellID)) {
+                    partitions.add(cellID - cellsInXAxis - 1);
+                }
+                break;
+            case TOPRIGHT:
+                if (hasRight(cellID)) {
+                    partitions.add(cellID + 1);
+                }
+                if (hasTop(cellID)) {
+                    partitions.add(cellID + cellsInXAxis);
+                }
+                break;
+            case TOPLEFT:
+                if (hasLeft(cellID)) {
+                    partitions.add(cellID - 1);
+                }
+                if (hasTop(cellID)) {
+                    partitions.add(cellID + cellsInXAxis);
+                }
+                break;
+            case BOTTOMRIGHT:
+                if (hasBottom(cellID)) {
+                    partitions.add(cellID - cellsInXAxis);
+                }
+                if (hasRight(cellID)) {
+                    partitions.add(cellID + 1);
+                }
+                break;
+            case BOTTOMLEFT:
+                if (hasBottom(cellID)) {
+                    partitions.add(cellID - cellsInXAxis);
+                }
+                if (hasLeft(cellID)) {
+                    partitions.add(cellID - 1);
+                }
+                break;
+            case LEFT:
+                if (hasLeft(cellID)) {
+                    partitions.add((cellID - 1));
+                }
+                break;
+            case TOP:
+                if (hasTop(cellID)) {
+                    partitions.add(cellID + cellsInXAxis);
+                }
+                break;
+            case RIGHT:
+                if (hasRight(cellID)) {
+                    partitions.add(cellID + 1);
+                }
+                break;
+            case BOTTOM:
+                if (hasBottom(cellID)) {
+                    partitions.add(cellID - cellsInXAxis);
+                }
+                break;
+            default: throw new RuntimeException("No correct position");
+        }
+    }
+
+    private int getAggID(int cellID, int index){
+        int aggID=-1;
+        int yc = cellID/cellsInXAxis;
+        int xc = cellID - (yc * cellsInXAxis);
+
+        switch(index){
+            case 0:
+                aggID = (xc)+(yc * (cellsInXAxis+1));
+                break;
+            case 1:
+                 aggID = (xc+1)+(yc * (cellsInXAxis+1));
+                 break;
+            case 2:
+                aggID = xc+((yc+1) * (cellsInXAxis+1));
+                break;
+            case 3:
+                aggID = (xc+1)+((yc+1) * (cellsInXAxis+1));
+                break;
+            default:
+                try {
+                    throw new Exception("Problem in the detection of aggID");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+        }
+        return aggID;
+    }
+
+    private int[] getPartitionsInExecutor(double x, double y, TypeSet typeSet){
+        int cellID = getCellId(x,y);
+        Cell cell = getCellInExecutor(cellID);
+        List<Integer> partitions = new ArrayList<>();
+        Agreements aggr;
+        partitions.add(getPartitionId(cell));
+
+        switch(cell.getPosition(x,y,r)){
+            case PLAIN:
+                break;
+            case TOPRIGHTQUARTER:
+                if(!existsInAgreements(getAggID(cellID, 3))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,TOPRIGHTQUARTER, partitions);
+                    }
+                }else {
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 3));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,TOPRIGHTQUARTER, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4){
+                        getPartitions(cellID, aggr, TOPRIGHT, typeSet, false, partitions);
+                    }else if(hasTop(cellID)){
+                        getPartitions(cellID, aggr, TOP, typeSet, partitions);
+                    }else if(hasRight(cellID)){
+                        getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartitionSuppArea(cell, cellID, TOPLEFT, true, x,y, typeSet, partitions);
+                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMRIGHT, false, x,y, typeSet, partitions);
+                break;
+            case TOPLEFTQUARTER:
+                if(!existsInAgreements(getAggID(cellID, 2))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,TOPLEFTQUARTER, partitions);
+                    }
+                }else {
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 2));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,TOPLEFTQUARTER, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4) {
+                        getPartitions(cellID, aggr, TOPLEFT, typeSet, false, partitions);
+                    }else if(hasTop(cellID)){
+                        getPartitions(cellID, aggr, TOP, typeSet, partitions);
+                    }else if(hasLeft(cellID)){
+                        getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartitionSuppArea(cell, cellID, TOPRIGHT, true, x, y, typeSet, partitions);
+                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMLEFT, false, x, y, typeSet, partitions);
+                break;
+            case BOTTOMRIGHTQUARTER:
+                if(!existsInAgreements(getAggID(cellID, 1))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,BOTTOMRIGHTQUARTER, partitions);
+                    }
+                }else {
+                aggr = getAgreementsInExecutor(getAggID(cellID, 1));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,BOTTOMRIGHTQUARTER, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4) {
+                        getPartitions(cellID, aggr, BOTTOMRIGHT, typeSet, false, partitions);
+                    } else if(hasBottom(cellID)){
+                        getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+                    }else if(hasRight(cellID)){
+                        getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMLEFT, true, x, y, typeSet, partitions);
+                checkForExtraPartitionSuppArea(cell, cellID, TOPRIGHT, false, x, y, typeSet, partitions);
+                break;
+            case BOTTOMLEFTQUARTER:
+                if(!existsInAgreements(getAggID(cellID, 0))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,BOTTOMLEFTQUARTER, partitions);
+                    }
+                }else {
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 0));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,BOTTOMLEFTQUARTER, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4) {
+                        getPartitions(cellID, aggr, BOTTOMLEFT, typeSet, false, partitions);
+                    }else if(hasBottom(cellID)){
+                        getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+                    }else if(hasLeft(cellID)){
+                        getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartitionSuppArea(cell, cellID, BOTTOMRIGHT, true, x, y, typeSet, partitions);
+                checkForExtraPartitionSuppArea(cell, cellID, TOPLEFT, false, x, y, typeSet, partitions);
+                break;
+            case TOPRIGHT:
+                if(!existsInAgreements(getAggID(cellID, 3))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,TOPRIGHT, partitions);
+                    }
+                }else {
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 3));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,TOPRIGHT, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4) {
+                        getPartitions(cellID, aggr, TOPRIGHT, typeSet, true, partitions);
+                    }else if(hasTop(cellID)){
+                        getPartitions(cellID, aggr, TOP, typeSet, partitions);
+                    }else if(hasRight(cellID)){
+                        getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartition(cell, cellID, TOPLEFT, true, x, y, typeSet, partitions);
+                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, false, x, y, typeSet, partitions);
+                break;
+            case TOPLEFT:
+                if(!existsInAgreements(getAggID(cellID, 2))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,TOPLEFT, partitions);
+                    }
+                }else {
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 2));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,TOPLEFT, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4) {
+                        getPartitions(cellID, aggr, TOPLEFT, typeSet, true, partitions);
+                    }else if(hasTop(cellID)){
+                        getPartitions(cellID, aggr, TOP, typeSet, partitions);
+                    }else if(hasLeft(cellID)){
+                        getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartition(cell, cellID, TOPRIGHT, true, x, y, typeSet, partitions);
+                checkForExtraPartition(cell, cellID, BOTTOMLEFT, false, x, y, typeSet, partitions);
+                break;
+            case BOTTOMRIGHT:
+                if(!existsInAgreements(getAggID(cellID, 1))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,BOTTOMRIGHT, partitions);
+                    }
+                }else {
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 1));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,BOTTOMRIGHT, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4) {
+                        getPartitions(cellID, aggr, BOTTOMRIGHT, typeSet, true, partitions);
+                    }else if(hasBottom(cellID)){
+                        getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+                    }else if(hasRight(cellID)){
+                        getPartitions(cellID, aggr, RIGHT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, x, y, typeSet, partitions);
+                checkForExtraPartition(cell, cellID, TOPRIGHT, false, x, y, typeSet, partitions);
+                break;
+            case BOTTOMLEFT:
+                if(!existsInAgreements(getAggID(cellID, 0))){
+                    if(typeSet.equals(TypeSet.A)) {
+                        getPartitionsWithoutAgreements(cellID,BOTTOMLEFT, partitions);
+                    }
+                }else {
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 0));
+                    if(aggr==null){
+                        if(typeSet.equals(TypeSet.B)) {
+                            getPartitionsWithoutAgreements(cellID,BOTTOMLEFT, partitions);
+                        }
+                    }
+                    else if(aggr.getSpacesNum()==4) {
+                        getPartitions(cellID, aggr, BOTTOMLEFT, typeSet, true, partitions);
+                    }else if(hasBottom(cellID)){
+                        getPartitions(cellID, aggr, BOTTOM, typeSet, partitions);
+                    }else if(hasLeft(cellID)){
+                        getPartitions(cellID, aggr, LEFT, typeSet, partitions);
+                    }
+                }
+                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, true, x, y, typeSet, partitions);
+                checkForExtraPartition(cell, cellID, TOPLEFT, false, x, y, typeSet, partitions);
+                break;
+            case TOP:
+                if(hasTop(cellID)){
+                    if(!existsInAgreements(getAggID(cellID, 3))){
+                        if(typeSet.equals(TypeSet.A)){
+                            partitions.add(cellID + cellsInXAxis);
+                        }
+                    }else{
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 3));
+                    if(aggr!=null){
+                        aggr.getPartitionsNEW(0, 2, typeSet, partitions);
+                    }else if(typeSet.equals(TypeSet.B)){
+                        partitions.add(cellID + cellsInXAxis);
+                    }}
+                }
+                checkForExtraPartition(cell, cellID, TOPLEFT, true, x,y, typeSet,partitions);
+                checkForExtraPartition(cell, cellID, TOPRIGHT, true, x,y, typeSet,partitions);
+                break;
+            case BOTTOM:
+                if(hasBottom(cellID)){
+                    if(!existsInAgreements(getAggID(cellID, 0))){
+                        if(typeSet.equals(TypeSet.A)){
+                            partitions.add(cellID - cellsInXAxis);
+                        }
+                    }else{
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 0));
+                    if(aggr!=null){
+                        aggr.getPartitionsNEW(3, 1, typeSet, partitions);
+                    }else if(typeSet.equals(TypeSet.B)){
+                        partitions.add(cellID - cellsInXAxis);
+                    }}
+                }
+                checkForExtraPartition(cell, cellID, BOTTOMLEFT, true, x,y, typeSet,partitions);
+                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, true, x,y, typeSet,partitions);
+                break;
+            case RIGHT:
+                if(hasRight(cellID)){
+                    if(!existsInAgreements(getAggID(cellID, 3))){
+                        if(typeSet.equals(TypeSet.A)){
+                            partitions.add(cellID + 1);
+                        }
+                    }else{
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 3));
+                    if(aggr!=null){
+                        aggr.getPartitionsNEW(0, 1, typeSet, partitions);
+                    }else if(typeSet.equals(TypeSet.B)){
+                        partitions.add(cellID + 1);
+                    }}
+                }
+                checkForExtraPartition(cell, cellID, TOPRIGHT, false, x,y, typeSet,partitions);
+                checkForExtraPartition(cell, cellID, BOTTOMRIGHT, false, x,y, typeSet,partitions);
+                break;
+            case LEFT:
+                if(hasLeft(cellID)){
+                    if(!existsInAgreements(getAggID(cellID, 0))){
+                        if(typeSet.equals(TypeSet.A)){
+                            partitions.add(cellID - 1);
+                        }
+                    }else{
+                    aggr = getAgreementsInExecutor(getAggID(cellID, 0));
+                    if(aggr!=null){
+                        aggr.getPartitionsNEW(3, 2, typeSet, partitions);
+                    }else if(typeSet.equals(TypeSet.B)){
+                        partitions.add(cellID - 1);
+                    }}
+                }
+                checkForExtraPartition(cell, cellID, TOPLEFT, false, x,y, typeSet,partitions);
+                checkForExtraPartition(cell, cellID, BOTTOMLEFT, false, x,y, typeSet,partitions);
+                break;
+            default: throw new RuntimeException("No correct position");
+        }
+        return listToArray(partitions);
+    }
+
+    private void checkForExtraPartitionSuppArea(Cell cell, int cellID, Position position, boolean horizontal1, double x, double y, TypeSet typeSet, List<Integer> list) {
+//        if(!geoData){
+        checkForExtraPartition(cell, cellID, position, horizontal1, x, y, typeSet, list);
+//        }else{
+//            //checkForExtraGeoPartition(cell, cellId, position, horizontal1, point, typeSet, list);
+//        }
+    }
+
+    private void checkForExtraPartition(Cell cell, int cellID, Position position, boolean horizontal, double x, double y, TypeSet typeSet, List<Integer> partitions) {
+        int extraCell;
+        Agreements aggr = null;
+        switch (position){
+            case TOPRIGHT:
+                aggr = getAgreementsInExecutor(getAggID(cellID, 3));
+                if(aggr!=null) {
+                    if (aggr.getSpacesNum() == 4) {
+                        if (horizontal) {
+                            extraCell = aggr.getExtraPartition(4, 1, 5, typeSet);
+                        } else {
+                            extraCell = aggr.getExtraPartition(2, 3, 5, typeSet);
+                        }
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+                        if (extraCell != -1) {
+                            if (horizontal) {
+                                if (Circle.newCircle(cell.getRectangle().getUpperBound().getX() - r, cell.getRectangle().getUpperBound().getY(), r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            } else {
+                                if (Circle.newCircle(cell.getRectangle().getUpperBound().getX(), cell.getRectangle().getUpperBound().getY() - r, r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case TOPLEFT:
+                aggr = getAgreementsInExecutor(getAggID(cellID, 2));
+                if(aggr!=null) {
+                    if (aggr.getSpacesNum() == 4) {
+                        if (horizontal) {
+                            extraCell = aggr.getExtraPartition(10, 2, 7, typeSet);
+                        } else {
+                            extraCell = aggr.getExtraPartition(1, 7, 9, typeSet);
+                        }
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getUpperLeftBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId + cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+                        if (extraCell != -1) {
+                            if (horizontal) {
+                                if (Circle.newCircle(cell.getRectangle().getUpperLeftBound().getX() + r, cell.getRectangle().getUpperLeftBound().getY(), r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            } else {
+                                if (Circle.newCircle(cell.getRectangle().getUpperLeftBound().getX(), cell.getRectangle().getUpperLeftBound().getY() - r, r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case BOTTOMRIGHT:
+                aggr = getAgreementsInExecutor(getAggID(cellID, 1));
+                if(aggr!=null) {
+
+                    if (aggr.getSpacesNum() == 4) {
+                        if (horizontal) {
+                            extraCell = aggr.getExtraPartition(3, 8, 11, typeSet);
+                        } else {
+                            extraCell = aggr.getExtraPartition(12, 4, 8, typeSet);
+                        }
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerRightBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  + 1))), typeSet);
+                        if (extraCell != -1) {
+                            if (horizontal) {
+                                if (Circle.newCircle(cell.getRectangle().getLowerRightBound().getX() - r, cell.getRectangle().getLowerRightBound().getY(), r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            } else {
+                                if (Circle.newCircle(cell.getRectangle().getLowerRightBound().getX(), cell.getRectangle().getLowerRightBound().getY() + r, r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case BOTTOMLEFT:
+                aggr = getAgreementsInExecutor(getAggID(cellID, 0));
+                if(aggr!=null) {
+
+                    if (aggr.getSpacesNum() == 4) {
+                        if (horizontal) {
+                            extraCell = aggr.getExtraPartition(9, 6, 12, typeSet);
+                        } else {
+                            extraCell = aggr.getExtraPartition(11, 6, 10, typeSet);
+                        }
+//                    Optional<Cell> extraCell = getAgreements(cellId, cell.getRectangle().getLowerBound()).getExtraPartition(cell,(horizontal)?(getCell((cellId - cellsInXAxis))):(getCell((cellId  - 1))), typeSet);
+                        if (extraCell != -1) {
+                            if (horizontal) {
+                                if (Circle.newCircle(cell.getRectangle().getLowerBound().getX() + r, cell.getRectangle().getLowerBound().getY(), r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            } else {
+                                if (Circle.newCircle(cell.getRectangle().getLowerBound().getX(), cell.getRectangle().getLowerBound().getY() + r, r).containsInclusive(x, y)) {
+                                    partitions.add(extraCell);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                throw new IllegalStateException("Position was not caught.");
+        }
+    }
+
+    private Agreements getAgreementsInExecutor(int aggID) {
+//        if (cells.containsKey(cellID)) {
+//
+//
+//            return agreements.computeIfAbsent(point, (p)->{
+//
+//                List<Cell> cells = new ArrayList<>();
+//
+//                switch (index){
+//                    case 0:
+//                        if (hasBottom(cellID) && hasLeft(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis) - 1));
+//                        }
+//                        if (hasBottom(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis)));
+//                        }
+//                        if (hasLeft(cellID)) {
+//                            cells.add(getCell((cellID - 1)));
+//                        }
+//                        cells.add(getCell(cellID));
+//                        break;
+//                    case 1:
+//                        if (hasBottom(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis)));
+//                        }
+//                        if (hasBottom(cellID) && hasRight(cellID)) {
+//                            cells.add(getCell((cellID - cellsInXAxis) + 1));
+//                        }
+//                        cells.add(getCell(cellID));
+//                        if (hasRight(cellID)) {
+//                            cells.add(getCell(cellID + 1));
+//                        }
+//                        break;
+//                    case 2:
+//                        if (hasLeft(cellID)) {
+//                            cells.add(getCell((cellID - 1)));
+//                        }
+//                        cells.add(getCell(cellID));
+//                        if (hasTop(cellID) && hasLeft(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis) - 1));
+//                        }
+//
+//                        if (hasTop(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis)));
+//                        }
+//                        break;
+//                    case 3:
+//                        cells.add(getCell(cellID));
+//                        if (hasRight(cellID)) {
+//                            cells.add(getCell(cellID + 1));
+//                        }
+//                        if (hasTop(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis)));
+//                        }
+//                        if (hasTop(cellID) && hasRight(cellID)) {
+//                            cells.add(getCell((cellID + cellsInXAxis) + 1));
+//                        }
+//                        break;
+//                    default:
+//                        try {
+//                            throw new Exception("");
+//                        } catch (Exception e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                }
+//                Agreements aggr = Agreements.newAgreements(cells.stream().mapToInt(this::cellToId).toArray(), cells, point, function);
+//                aggr.createEdges();
+//                return aggr;
+//            });
+//    }
+//        return null;
+        return agreements.get(aggID);
+    }
+
+    public boolean existsInAgreements(int aggID){
+        return agreements.containsKey(aggID);
+    }
+
+    public int[] listToArray(List<Integer> list){
+        int[] array = new int[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            array[i] = list.get(i);
+        }
+        return array;
     }
 
 }

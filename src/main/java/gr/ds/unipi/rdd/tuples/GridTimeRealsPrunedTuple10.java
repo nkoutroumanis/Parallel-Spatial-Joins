@@ -9,6 +9,7 @@ import gr.ds.unipi.grid.*;
 import gr.ds.unipi.rdd.CustomPartitioner;
 import gr.ds.unipi.rdd.LPTPartitioner;
 import gr.ds.unipi.shapes.Point;
+import gr.ds.unipi.shapes.Position;
 import gr.ds.unipi.shapes.Rectangle;
 import org.apache.spark.Partitioner;
 import org.apache.spark.SparkConf;
@@ -19,7 +20,6 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.SparkSession;
 import scala.Function4;
-import scala.Tuple11;
 import scala.Tuple13;
 import scala.Tuple2;
 
@@ -50,7 +50,11 @@ public class GridTimeRealsPrunedTuple10 {
             double radius = Double.parseDouble(args[1]);
             int flag = Integer.parseInt(args[2]);
 
-            TriFunction<Cell, Cell, Point, Agreement> function = null;
+//            ReplicationType function = null;
+//            if (flag == 1) {
+//                function = new DatasetA();
+//            }
+            gr.ds.unipi.grid.Function4<Cell, Cell, Point, Agreement> function = null;
             if (flag == 1) {
                 function = NewFunc.datasetA;
             } else if (flag == 2) {
@@ -176,9 +180,9 @@ public class GridTimeRealsPrunedTuple10 {
                 @Override
                 public Iterator<Tuple2<Integer, Tuple13<String, Double, Double, String, Double, String, Double, String, Double, String, Double, String, Double>>> call(Tuple13<String, Double, Double, String, Double, String, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
                     List<Tuple2<Integer, Tuple13<String, Double, Double, String, Double, String, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>();
-                    String[] cellIds = gridBroadcasted.getValue().getPartitionsAType(tuple._2(), tuple._3());
-                    for (String cellId : cellIds) {
-                        list.add(new Tuple2<>(Integer.parseInt(cellId), tuple));
+                    int[] cellIds = gridBroadcasted.getValue().getPartitionsATypeInExecutor(tuple._2(), tuple._3());
+                    for (int cellId : cellIds) {
+                        list.add(new Tuple2<>(cellId, tuple));
                     }
                     return list.iterator();
                 }
@@ -188,10 +192,10 @@ public class GridTimeRealsPrunedTuple10 {
                 @Override
                 public Iterator<Tuple2<Integer, Tuple13<String, Double, Double, String, Double, String, Double, String, Double, String, Double, String, Double>>> call(Tuple13<String, Double, Double, String, Double, String, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
                     List<Tuple2<Integer, Tuple13<String, Double, Double, String, Double, String, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>();
-                    String[] cellIds = null;
-                    cellIds = gridBroadcasted.getValue().getPartitionsBType(tuple._2(), tuple._3());
-                    for (String cellId : cellIds) {
-                        list.add(new Tuple2<>(Integer.parseInt(cellId), tuple));
+                    int[] cellIds = null;
+                    cellIds = gridBroadcasted.getValue().getPartitionsBTypeInExecutor(tuple._2(), tuple._3());
+                    for (int cellId : cellIds) {
+                        list.add(new Tuple2<>(cellId, tuple));
                     }
                     return list.iterator();
                 }

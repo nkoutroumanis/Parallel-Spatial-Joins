@@ -1,10 +1,5 @@
 package gr.ds.unipi.epsilongrid;
 
-import gr.ds.unipi.agreements.Agreement;
-import gr.ds.unipi.grid.Cell;
-import gr.ds.unipi.grid.Grid;
-import gr.ds.unipi.grid.NewFunc;
-import gr.ds.unipi.grid.TriFunction;
 import gr.ds.unipi.shapes.Point;
 import gr.ds.unipi.shapes.Rectangle;
 import org.apache.spark.SparkConf;
@@ -17,8 +12,6 @@ import org.apache.spark.sql.functions$;
 import org.apache.spark.sql.types.DataTypes;
 import scala.reflect.ClassTag;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 
 import static org.apache.spark.sql.functions.col;
@@ -38,7 +31,7 @@ public class GridTimeRealsDataframe {
 
 
         long startTime = System.currentTimeMillis();
-        EpsilonGrid grid = EpsilonGrid.newGrid(Rectangle.newRectangle(Point.newPoint(-124.763068, 17.673976), Point.newPoint(-64.564908,49.384359)), radius);
+        GenericGrid grid = GenericGrid.newGenericGrid(Rectangle.newRectangle(Point.newPoint(-124.763068, 17.673976), Point.newPoint(-64.564908,49.384359)), radius, 1,true);
 
         Dataset<Row> df1 = sparkSession.read().option("delimiter", "\t").csv(path + args[2]+".csv").withColumnRenamed("_c0", "id_1").withColumnRenamed("_c1", "x_1").withColumnRenamed("_c2", "y_1");
         Dataset<Row> df2 = sparkSession.read().option("delimiter", "\t").csv(path + args[3]+".csv").withColumnRenamed("_c0", "id_2").withColumnRenamed("_c1", "x_2").withColumnRenamed("_c2", "y_2");
@@ -58,7 +51,7 @@ public class GridTimeRealsDataframe {
 //        }
 //        //grid.load();
 
-        Broadcast<EpsilonGrid> gridBroadcasted = sparkSession.sparkContext().broadcast(grid, ClassTag.apply(EpsilonGrid.class));
+        Broadcast<GenericGrid> gridBroadcasted = sparkSession.sparkContext().broadcast(grid, ClassTag.apply(GenericGrid.class));
         UserDefinedFunction udfCoordinatesToArrayA = udf(
                 (String x, String y) -> gridBroadcasted.getValue().getPartitionsAType(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
         );

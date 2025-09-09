@@ -2,37 +2,37 @@ package gr.ds.unipi.agreements;
 
 import gr.ds.unipi.TypeSet;
 
-public class Edge<T extends Space> {
+public class Edge {
 
-    private final T tail;
-    private final T head;
+//    private final int tail;
+//    private final int head;
     private final TypeSet typeSet;
-    private final long weight;
+    private final int weight;
     private boolean isLocked;
     private boolean isEliminated;
 
-    private Edge(T tail, T head, TypeSet typeSet, long weight) {
-        this.tail = tail;
-        this.head = head;
+    private Edge(/*int tail, int head,*/ TypeSet typeSet, int weight) {
+//        this.tail = tail;
+//        this.head = head;
         this.typeSet = typeSet;
         this.weight = weight;
     }
 
-    public static <T extends Space> Edge<T> newEdge(T tail, T head, TypeSet typeSet, long weight){
-        return new Edge<>(tail, head, typeSet, weight);
+    public static Edge newEdge(/*int tail, int head,*/ TypeSet typeSet, int weight){
+        return new Edge(/*tail, head,*/ typeSet, weight);
     }
 
-    public long getWeight() {
+    public int getWeight() {
         return weight;
     }
 
-    public T getTail() {
-        return tail;
-    }
-
-    public T getHead() {
-        return head;
-    }
+//    public int getTail() {
+//        return tail;
+//    }
+//
+//    public int getHead() {
+//        return head;
+//    }
 
     public TypeSet getTypeSet() {
         return typeSet;

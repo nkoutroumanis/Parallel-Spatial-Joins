@@ -4,21 +4,14 @@ import gr.ds.unipi.agreements.Agreement;
 import gr.ds.unipi.grid.Cell;
 import gr.ds.unipi.grid.Grid;
 import gr.ds.unipi.grid.NewFunc;
-import gr.ds.unipi.grid.TriFunction;
 import gr.ds.unipi.shapes.Point;
 import gr.ds.unipi.shapes.Rectangle;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.expressions.UserDefinedFunction;
-import org.apache.spark.sql.functions$;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.storage.StorageLevel;
 
-import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.udf;
 
 public class GridTimeDist1 {
@@ -32,33 +25,37 @@ public class GridTimeDist1 {
         double radius = Double.parseDouble(args[1]);
         int flag = Integer.parseInt(args[2]);
 
-        TriFunction<Cell, Cell, Point, Agreement> function = null;
-        if(flag==1){
-            function = NewFunc.datasetA;
-        }else if(flag==2){
-            function = NewFunc.datasetB;
-        }else if(flag==3){
-            function = NewFunc.costBasedCombinedWithBoundaries;
-        }else if(flag == 4){
-            function = NewFunc.lesserPointsinBoundaries;
-        }else if(flag == 5){
-            function = NewFunc.dok;
-        }else if(flag == 6){
-            function = NewFunc.dok1;
-        }else if(flag == 7){
-            function = NewFunc.dok2;
-        }else if(flag == 8){
-            function = NewFunc.costBasedBackpropagation;
-        }else if(flag == 9){
-            function = NewFunc.case3Backpropagation;
-        }
-        else{
-            try {
-                throw new Exception("Wrong Flag");
-            } catch (Exception e) {
-                e.printStackTrace();
+//        ReplicationType function = null;
+//        if (flag == 1) {
+//            function = new DatasetA();
+//        }
+            gr.ds.unipi.grid.Function4<Cell, Cell, Point, Agreement> function = null;
+            if (flag == 1) {
+                function = NewFunc.datasetA;
+            } else if (flag == 2) {
+                function = NewFunc.datasetB;
+            } else if (flag == 3) {
+                function = NewFunc.costBasedCombinedWithBoundaries;
+            } else if (flag == 4) {
+                function = NewFunc.lesserPointsinBoundaries;
+            } else if (flag == 5) {
+                function = NewFunc.dok;
+            } else if (flag == 6) {
+                function = NewFunc.dok1;
+            } else if (flag == 7) {
+                function = NewFunc.dok2;
+            } else if (flag == 8) {
+                function = NewFunc.costBasedBackpropagation;
+            } else if (flag == 9) {
+                function = NewFunc.case3Backpropagation;
+            } else {
+                try {
+                    throw new Exception("Wrong Flag");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }
+
         Grid.experiments = "DIAG_PR";
 
         long startIndexingTime = System.currentTimeMillis();

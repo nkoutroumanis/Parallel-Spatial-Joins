@@ -24,6 +24,10 @@ public class Circle {
         return new Circle(center, radius);
     }
 
+    public static Circle newCircle(double x, double y, double radius){
+        return new Circle(Point.newPoint(x, y), radius);
+    }
+
     public static int compare(double cx, double cy, double r, double x, double y){
         return Double.compare(Math.pow((cx-x), 2) + Math.pow((cy-y), 2), Math.pow(r,2));
     }
@@ -38,6 +42,14 @@ public class Circle {
 
     public boolean containsExclusive(Point point){
         return Double.compare(Math.pow(center.getX()-point.getX(), 2)+Math.pow(center.getY()-point.getY(), 2), Math.pow(radius, 2)) == -1;
+    }
+
+    public boolean containsInclusive(double x, double y){
+        return Double.compare(Math.pow(center.getX()-x, 2)+Math.pow(center.getY()-y, 2), Math.pow(radius, 2)) != 1;
+    }
+
+    public boolean containsExclusive(double x, double y){
+        return Double.compare(Math.pow(center.getX()-x, 2)+Math.pow(center.getY()-y, 2), Math.pow(radius, 2)) == -1;
     }
 
     public boolean containsInclusiveHaversine(Point point){

@@ -4,7 +4,6 @@ import gr.ds.unipi.agreements.Agreement;
 import gr.ds.unipi.grid.Cell;
 import gr.ds.unipi.grid.Grid;
 import gr.ds.unipi.grid.NewFunc;
-import gr.ds.unipi.grid.TriFunction;
 import gr.ds.unipi.shapes.Point;
 import gr.ds.unipi.shapes.Rectangle;
 import org.apache.spark.SparkConf;
@@ -18,7 +17,6 @@ import org.apache.spark.sql.types.DataTypes;
 import scala.reflect.ClassTag;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -38,33 +36,36 @@ public class GridTimeReals {
         double radius = Double.parseDouble(args[1]);
         int flag = Integer.parseInt(args[2]);
 
-        TriFunction<Cell, Cell, Point, Agreement> function = null;
-        if(flag==1){
-            function = NewFunc.datasetA;
-        }else if(flag==2){
-            function = NewFunc.datasetB;
-        }else if(flag==3){
-            function = NewFunc.costBasedCombinedWithBoundaries;
-        }else if(flag == 4){
-            function = NewFunc.lesserPointsinBoundaries;
-        }else if(flag == 5){
-            function = NewFunc.dok;
-        }else if(flag == 6){
-            function = NewFunc.dok1;
-        }else if(flag == 7){
-            function = NewFunc.dok2;
-        }else if(flag == 8){
-            function = NewFunc.costBasedBackpropagation;
-        }else if(flag == 9){
-            function = NewFunc.case3Backpropagation;
-        }
-        else{
-            try {
-                throw new Exception("Wrong Flag");
-            } catch (Exception e) {
-                e.printStackTrace();
+//        ReplicationType function = null;
+//        if (flag == 1) {
+//            function = new DatasetA();
+//        }
+            gr.ds.unipi.grid.Function4<Cell, Cell, Point, Agreement> function = null;
+            if (flag == 1) {
+                function = NewFunc.datasetA;
+            } else if (flag == 2) {
+                function = NewFunc.datasetB;
+            } else if (flag == 3) {
+                function = NewFunc.costBasedCombinedWithBoundaries;
+            } else if (flag == 4) {
+                function = NewFunc.lesserPointsinBoundaries;
+            } else if (flag == 5) {
+                function = NewFunc.dok;
+            } else if (flag == 6) {
+                function = NewFunc.dok1;
+            } else if (flag == 7) {
+                function = NewFunc.dok2;
+            } else if (flag == 8) {
+                function = NewFunc.costBasedBackpropagation;
+            } else if (flag == 9) {
+                function = NewFunc.case3Backpropagation;
+            } else {
+                try {
+                    throw new Exception("Wrong Flag");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }
 
         if(args[5].equals("EMPTY")){
             Grid.experiments = "";
@@ -136,11 +137,11 @@ public class GridTimeReals {
 
         Broadcast<Grid> gridBroadcasted = sparkSession.sparkContext().broadcast(grid, ClassTag.apply(Grid.class));
         UserDefinedFunction udfCoordinatesToArrayA = udf(
-                (String x, String y) -> gridBroadcasted.getValue().getPartitionsAType(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
+                (String x, String y) -> gridBroadcasted.getValue().getPartitionsATypeInExecutor(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
         );
 
         UserDefinedFunction udfCoordinatesToArrayB = udf(
-                (String x, String y) -> gridBroadcasted.getValue().getPartitionsBType(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
+                (String x, String y) -> gridBroadcasted.getValue().getPartitionsBTypeInExecutor(Double.parseDouble(x), Double.parseDouble(y)), DataTypes.createArrayType(DataTypes.StringType)
         );
 
         df1 = df1.withColumn("partitions", udfCoordinatesToArrayA.apply(col("x_1"),col("y_1")));

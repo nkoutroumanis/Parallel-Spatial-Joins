@@ -18,7 +18,8 @@ public class GridTimeRealsCentralized {
     public static void main(String args[]) throws IOException {
 
         double radius = 0.018;
-        TriFunction function = NewFunc.datasetA;
+        gr.ds.unipi.grid.Function4 function = NewFunc.datasetA;
+//        ReplicationType function = new DatasetA();
         Grid.experiments = "DIAG_PR";
         boolean firstSetHash = true;
 
@@ -64,7 +65,7 @@ public class GridTimeRealsCentralized {
             BufferedReader br2 = new BufferedReader(new FileReader(datasetAPath));
             BufferedReader br1 = new BufferedReader(new FileReader(datasetBPath));
 
-            HashMap<String, List<Tuple3<String, Double, Double>>> hashMap = new HashMap();
+            HashMap<Integer, List<Tuple3<String, Double, Double>>> hashMap = new HashMap();
 
 
             String line;
@@ -72,8 +73,8 @@ public class GridTimeRealsCentralized {
                 String[] tuple = line.split("\t");
                 double x = Double.parseDouble(tuple[1]);
                 double y = Double.parseDouble(tuple[2]);
-                String[] indexes = grid.getPartitionsBType(x, y);
-                for (String index : indexes) {
+                int[] indexes = grid.getPartitionsBTypeInExecutor(x, y);
+                for (int index : indexes) {
                     if(hashMap.containsKey(index)){
                         hashMap.get(index).add(Tuple3.apply(tuple[0], x, y));
                     }else{
@@ -90,8 +91,8 @@ public class GridTimeRealsCentralized {
                 String[] tuple = line.split("\t");
                 double x = Double.parseDouble(tuple[1]);
                 double y = Double.parseDouble(tuple[2]);
-                String[] indexes = grid.getPartitionsAType(x, y);
-                for (String index : indexes) {
+                int[] indexes = grid.getPartitionsATypeInExecutor(x, y);
+                for (int index : indexes) {
                     if(hashMap.get(index)!=null){
                         for (Tuple3<String, Double, Double> t : hashMap.get(index)) {
                             comparisonsCount++;
@@ -107,7 +108,7 @@ public class GridTimeRealsCentralized {
             BufferedReader br1 = new BufferedReader(new FileReader(datasetAPath));
             BufferedReader br2 = new BufferedReader(new FileReader(datasetBPath));
 
-            HashMap<String, List<Tuple3<String, Double, Double>>> hashMap = new HashMap();
+            HashMap<Integer, List<Tuple3<String, Double, Double>>> hashMap = new HashMap();
 
 
             String line;
@@ -115,8 +116,8 @@ public class GridTimeRealsCentralized {
                 String[] tuple = line.split("\t");
                 double x = Double.parseDouble(tuple[1]);
                 double y = Double.parseDouble(tuple[2]);
-                String[] indexes = grid.getPartitionsAType(x, y);
-                for (String index : indexes) {
+                int[] indexes = grid.getPartitionsATypeInExecutor(x, y);
+                for (int index : indexes) {
                     if(hashMap.containsKey(index)){
                         hashMap.get(index).add(Tuple3.apply(tuple[0], x, y));
                     }else{
@@ -133,8 +134,8 @@ public class GridTimeRealsCentralized {
                 String[] tuple = line.split("\t");
                 double x = Double.parseDouble(tuple[1]);
                 double y = Double.parseDouble(tuple[2]);
-                String[] indexes = grid.getPartitionsBType(x, y);
-                for (String index : indexes) {
+                int[] indexes = grid.getPartitionsBTypeInExecutor(x, y);
+                for (int index : indexes) {
                     if(hashMap.get(index)!=null){
                         for (Tuple3<String, Double, Double> t : hashMap.get(index)) {
                             comparisonsCount++;

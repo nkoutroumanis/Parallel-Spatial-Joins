@@ -1,3 +1,6 @@
-mvn clean && mvn -Dmaven.test.skip=true package && scp target/Spatial-Joins-1.0-SNAPSHOT.jar ktr:/mnt/vdb/dataset/joins/
+mvn clean && mvn -Dmaven.test.skip=true package &&
+scp target/Spatial-Joins-1.0-SNAPSHOT.jar ktr:/mnt/vdb/dataset/joins/ &&
+ssh ktr "scp /mnt/vdb/dataset/joins/Spatial-Joins-1.0-SNAPSHOT.jar node14:~/"
+
 
 mvn dependency:copy-dependencies -DoutputDirectory=libSedona

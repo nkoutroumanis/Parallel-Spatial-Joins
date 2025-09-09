@@ -46,14 +46,25 @@
             <version>20220320</version>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>org.apache.sedona</groupId>-->
+<!--            <artifactId>sedona-core-3.0_2.12</artifactId>-->
+<!--            <version>1.4.1</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.sedona</groupId>-->
+<!--            <artifactId>sedona-sql-3.0_2.12</artifactId>-->
+<!--            <version>1.4.1</version>-->
+<!--        </dependency>-->
+
         <dependency>
             <groupId>org.apache.sedona</groupId>
-            <artifactId>sedona-core-3.0_2.12</artifactId>
+            <artifactId>sedona-core-3.4_2.13</artifactId>
             <version>1.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.sedona</groupId>
-            <artifactId>sedona-sql-3.0_2.12</artifactId>
+            <artifactId>sedona-sql-3.4_2.13</artifactId>
             <version>1.4.1</version>
         </dependency>
         <dependency>

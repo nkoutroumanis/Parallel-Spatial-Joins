@@ -36,11 +36,11 @@ public class LeafNode extends Node implements Space {
         }
     }
 
-    public long getNumberOfPointsAType(){
+    public int getNumberOfPointsAType(){
         return datasetA.size();
     }
 
-    public long getNumberOfPointsBType(){
+    public int getNumberOfPointsBType(){
         return datasetB.size();
     }
 

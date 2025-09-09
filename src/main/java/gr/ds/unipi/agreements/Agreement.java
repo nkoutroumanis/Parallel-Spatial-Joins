@@ -1,27 +1,28 @@
 package gr.ds.unipi.agreements;
 
-public class Agreement<T extends Space> {
 
-    private final Edge<T> edgeA;
-    private final Edge<T> edgeB;
+public class Agreement {
 
-    private Agreement(Edge<T> edgeA, Edge<T> edgeB){
+    private final Edge edgeA;
+    private final Edge edgeB;
+
+    private Agreement(Edge edgeA, Edge edgeB){
         this.edgeA = edgeA;
         this.edgeB = edgeB;
     }
 
-    public Edge<T> getEdgeA() {
+    public Edge getEdgeA() {
         return edgeA;
     }
 
-    public Edge<T> getEdgeB() {
+    public Edge getEdgeB() {
         return edgeB;
     }
 
-    public static <T extends Space> Agreement<T> newAgreement(Edge<T> edgeA, Edge<T> edgeB){
-        return new Agreement<T>(edgeA, edgeB);
+    public static Agreement newAgreement(Edge edgeA, Edge edgeB){
+        return new Agreement(edgeA, edgeB);
     }
 
-    public static <T extends Space> Agreement<T> reverseAgreement(Agreement<T> agreement){
-        return new Agreement<T>(agreement.edgeB, agreement.edgeA);
+    public static Agreement reverseAgreement(Agreement agreement){
+        return new Agreement(agreement.edgeB, agreement.edgeA);
     }}

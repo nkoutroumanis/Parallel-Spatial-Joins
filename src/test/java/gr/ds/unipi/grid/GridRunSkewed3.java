@@ -46,7 +46,7 @@ public class GridRunSkewed3 {
             BufferedWriter w = new BufferedWriter(new FileWriter(entry.getKey()+"metrics.txt"));
             w.write(  String.format("%-18s", "radius") + String.format("%-18s", "splits") + String.format("%-18s", "replication") + String.format("%-18s", "min(cost)") + String.format("%-18s", "max(cost)") + String.format("%-18s", "stddev_pop(cost)") + String.format("%-18s", "sum(cost)") + String.format("%-18s", "avg(cost)") + String.format("%-18s", "min(abst)") + String.format("%-18s", "max(abst)") + String.format("%-18s", "stddev_pop(abst)") + String.format("%-18s", "avg(abst)"));
             w.newLine();
-            Grid grid = Grid.newGrid(Rectangle.newRectangle(Point.newPoint(0, 0), Point.newPoint(100, 100)), radius, (TriFunction<Cell, Cell, Point, Agreement>) entry.getValue().getKey());
+            Grid grid = Grid.newGrid(Rectangle.newRectangle(Point.newPoint(0, 0), Point.newPoint(100, 100)), radius, (Function4<Cell, Cell, Point, Agreement>) entry.getValue().getKey());
 
             String line = null;
 
@@ -68,7 +68,7 @@ public class GridRunSkewed3 {
                 bf = new BufferedReader(new FileReader(path+File.separator+"datasetA.csv"));
                 while ((line = bf.readLine()) != null) {
                     String[] record = line.split(";");
-                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsAType(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
+                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsATypeInExecutor(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
                     wr.newLine();
                 }
                 bf.close();
@@ -78,7 +78,7 @@ public class GridRunSkewed3 {
                 bf = new BufferedReader(new FileReader(path+File.separator+"datasetB.csv"));
                 while ((line = bf.readLine()) != null) {
                     String[] record = line.split(";");
-                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsBType(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
+                    wr.write(line + ";" + Arrays.toString(grid.getPartitionsBTypeInExecutor(Double.parseDouble(record[0]), Double.parseDouble(record[1]))));
                     wr.newLine();
                 }
                 bf.close();

@@ -8,7 +8,7 @@ import gr.ds.unipi.agreements.Space;
 import gr.ds.unipi.grid.Cell;
 import gr.ds.unipi.grid.Grid;
 import gr.ds.unipi.grid.NewFunc;
-import gr.ds.unipi.grid.Position;
+import gr.ds.unipi.shapes.Position;
 import gr.ds.unipi.shapes.Point;
 import gr.ds.unipi.shapes.Rectangle;
 import org.apache.spark.SparkConf;
