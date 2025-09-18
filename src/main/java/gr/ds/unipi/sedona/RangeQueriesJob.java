@@ -1,5 +1,6 @@
 package gr.ds.unipi.sedona;
 
+import gr.ds.unipi.SparkLogParser;
 import org.apache.sedona.core.enums.GridType;
 import org.apache.sedona.core.enums.IndexType;
 import org.apache.sedona.core.formatMapper.WktReader;
@@ -10,6 +11,7 @@ import org.apache.sedona.spark.SedonaContext;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
+import scala.Tuple3;
 
 public class RangeQueriesJob {
     public static void main(String args[]) throws Exception {
@@ -38,7 +40,11 @@ public class RangeQueriesJob {
             time = (System.currentTimeMillis() - startJobTime);
             jsc.close();
             sparkSession.close();
-        System.out.println("Total time exec: "+ time/1000 + " sec");
+        Tuple3<String, String, String> t = SparkLogParser.fileLogAnalyzer2();
+
+        System.out.println("Total time exec (sec): "+ time/1000 + " sec");
+        System.out.println("Shuffled Remote Bytes Read (MB): " + t._2());
+        System.out.println("Summed Peak Memory Execution (MB): " +t._3());
 
     }
 }

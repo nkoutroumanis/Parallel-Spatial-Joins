@@ -1,5 +1,6 @@
 package gr.ds.unipi.sedona;
 
+import gr.ds.unipi.SparkLogParser;
 import org.apache.sedona.core.enums.GridType;
 import org.apache.sedona.core.enums.IndexType;
 import org.apache.sedona.core.formatMapper.WktReader;
@@ -12,19 +13,17 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.locationtech.jts.geom.Envelope;
+import scala.Tuple3;
 
 public class PolygonsJob {
     public static void main(String args[]) throws Exception {
 
-        int repeats = Integer.parseInt(args[5]);
         long time =0;
         long cou = 0;
 
-        for (int n = 0; n < repeats; n++) {
             SparkConf sparkConf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").set("spark.kryo.registrator", "org.apache.sedona.core.serde.SedonaKryoRegistrator");
 
             SparkSession sparkSession = SedonaContext.builder().config(sparkConf).getOrCreate();/*SparkSession.builder().config(sparkConf).master("local[*]").getOrCreate()*/
-
             JavaSparkContext jsc = JavaSparkContext.fromSparkContext(sparkSession.sparkContext());
             long startJobTime = System.currentTimeMillis();
 
@@ -44,14 +43,16 @@ public class PolygonsJob {
             System.out.println("intersected pairs: "+ cou);
 //            cou = JoinQuery.SpatialJoinQueryFlat(objectRDDA, objectRDDB, true, SpatialPredicate.INTERSECTS).count();
 //            System.out.println("intersected pairs: "+ cou);
-            time = time + (System.currentTimeMillis() - startJobTime);
+            time = time + (System.currentTimeMillis() - startJobTime)/1000;
 
             jsc.close();
             sparkSession.close();
             Thread.sleep(5000);
-        }
-        System.out.println("intersected pairs: "+ cou);
-        System.out.println("Total time exec: "+ time/repeats);
+        Tuple3<String, String, String> t = SparkLogParser.fileLogAnalyzer2();
 
+        System.out.println("intersected pairs: "+ cou);
+        System.out.println("Total time exec (sec): "+ time);
+        System.out.println("Shuffled Remote Bytes Read (MB): " + t._2());
+        System.out.println("Summed Peak Memory Execution (MB): " +t._3());
     }
 }

@@ -3,6 +3,7 @@ package gr.ds.unipi.sedona;
 import gr.ds.unipi.SparkLogParser;
 import org.apache.sedona.common.enums.FileDataSplitter;
 import org.apache.sedona.core.enums.GridType;
+import org.apache.sedona.core.enums.IndexType;
 import org.apache.sedona.core.formatMapper.WktReader;
 import org.apache.sedona.core.spatialOperator.JoinQuery;
 import org.apache.sedona.core.spatialOperator.SpatialPredicate;
@@ -48,6 +49,7 @@ public class DistanceJoinJob {
             circleRDD.analyze();
             circleRDD.spatialPartitioning(GridType.QUADTREE, Integer.parseInt(args[4]));
             objectRDDB.spatialPartitioning(circleRDD.getPartitioner());
+        objectRDDB.buildIndex(IndexType.RTREE, true);
 
             cou = JoinQuery.DistanceJoinQueryFlat(objectRDDB, circleRDD, true, SpatialPredicate.COVERED_BY).count();
 
@@ -57,7 +59,10 @@ public class DistanceJoinJob {
 
         jsc.close();
         sparkSession.close();
-        System.out.println("Total time exec: "+ time/1000 + " sec");
+        Tuple3<String, String, String> t = SparkLogParser.fileLogAnalyzer2();
 
+        System.out.println("Total time exec (sec): "+ time/1000 + " sec");
+        System.out.println("Shuffled Remote Bytes Read (MB): " + t._2());
+        System.out.println("Summed Peak Memory Execution (MB): " +t._3());
     }
 }

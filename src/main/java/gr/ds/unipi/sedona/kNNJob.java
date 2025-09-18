@@ -31,8 +31,10 @@ public class kNNJob {
         boolean buildOnSpatialPartitionedRDD = false;
         spatialRDDB.buildIndex(IndexType.RTREE, buildOnSpatialPartitionedRDD);
 
+        int counter = 1;
         for (Point point : queryPoints) {
             List<Geometry> geometries = KNNQuery.SpatialKnnQuery(spatialRDDB, point, k, true);
+            System.out.println(counter++);
 //            StringBuilder sb = new StringBuilder();
 //            for (Geometry geometry : geometries) {
 //                sb.append(geometry.toText()+", ");
@@ -46,7 +48,7 @@ public class kNNJob {
             time = (System.currentTimeMillis() - startJobTime);
             jsc.close();
             sparkSession.close();
-        System.out.println("Total time exec: "+ time/1000 + " sec");
+        System.out.println("Total time exec (sec): "+ time/1000 + " sec");
 
     }
 }
