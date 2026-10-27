@@ -20,9 +20,9 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.SparkSession;
-import scala.Tuple11;
 import scala.Tuple2;
 import scala.Tuple3;
+import scala.Tuple9;
 import scala.reflect.ManifestFactory$;
 
 import java.io.*;
@@ -93,9 +93,9 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
 
         Random random = new Random();
 
-            JavaRDD<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> rddTuples = rddTxtFiles.map((String line) -> {
+            JavaRDD<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> rddTuples = rddTxtFiles.map((String line) -> {
                 String[] elements = line.split("\t");
-                return new Tuple11<>(elements[0], Double.parseDouble(elements[1]), Double.parseDouble(elements[2]), randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000);
+                return new Tuple9<>(elements[0], Double.parseDouble(elements[1]), Double.parseDouble(elements[2]), randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000);
             });
 
 //            if (!(flag == 1 || flag == 2)) {
@@ -121,10 +121,10 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
 //        }
 //            gridBroadcasted.getValue().initialize();
 
-            JavaPairRDD<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> pairRDD = rddTuples.flatMapToPair(new PairFlatMapFunction<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>() {
+            JavaPairRDD<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> pairRDD = rddTuples.flatMapToPair(new PairFlatMapFunction<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>() {
                 @Override
-                public Iterator<Tuple2<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> call(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
-                    List<Tuple2<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>(3);
+                public Iterator<Tuple2<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> call(Tuple9<String, Double, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
+                    List<Tuple2<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>(3);
                     int[] cellIds = gridBroadcasted.getValue().getPartitions(tuple._2(), tuple._3());
                     for (int i = 0; i < cellIds.length; i++) {
                         list.add(new Tuple2<>(cellIds[i], tuple));
@@ -133,21 +133,21 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
                 }
             });
 
-            long count = pairRDD.groupByKey(cp).flatMap(new FlatMapFunction<Tuple2<Integer, Iterable<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>>, Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>,Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>>()  {
+            long count = pairRDD.groupByKey(cp).flatMap(new FlatMapFunction<Tuple2<Integer, Iterable<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>>, Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>,Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>>()  {
                 @Override
-                public Iterator<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> call(Tuple2<Integer, Iterable< Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> tup) throws Exception {
+                public Iterator<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> call(Tuple2<Integer, Iterable< Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> tup) throws Exception {
 
-                    List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results = new ArrayList<>();
+                    List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results = new ArrayList<>();
 
                     int[] replicatedObjectsMapCount = new int[2];
                     int homeObjectsCount = 0;
-                    List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[]> replicatedObjectsList = new ArrayList<>(2);
+                    List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[]> replicatedObjectsList = new ArrayList<>(2);
 
                     SelfGrid g = gridBroadcasted.getValue();
 
-                    Iterator<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> it = tup._2.iterator();
+                    Iterator<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> it = tup._2.iterator();
                     while (it.hasNext()) {
-                        Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> obj= it.next();
+                        Tuple9<String, Double, Double, String, Double, String, Double, String, Double> obj= it.next();
                         int cellId = g.getCellId(obj._2(), obj._3());
                         if(cellId == tup._1){
                             homeObjectsCount++;
@@ -163,17 +163,17 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
                         }
                     }
 
-                    Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] homeObjects = new Tuple11[homeObjectsCount];
+                    Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] homeObjects = new Tuple9[homeObjectsCount];
                     homeObjectsCount = 0;
 
                     for (int i = 0; i < replicatedObjectsMapCount.length; i++) {
-                        replicatedObjectsList.add(new Tuple11[replicatedObjectsMapCount[i]]);
+                        replicatedObjectsList.add(new Tuple9[replicatedObjectsMapCount[i]]);
                         replicatedObjectsMapCount[i] = 0;
                     }
 
                     it = tup._2.iterator();
                     while (it.hasNext()) {
-                        Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> obj= it.next();
+                        Tuple9<String, Double, Double, String, Double, String, Double, String, Double> obj= it.next();
                         int cellId = g.getCellId(obj._2(), obj._3());
 
                         if(cellId == tup._1){
@@ -192,7 +192,7 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
 
                     Arrays.sort(homeObjects,Comparator.comparingDouble(obj->obj._3()));
 
-                    for (Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] tuple3s : replicatedObjectsList) {
+                    for (Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] tuple3s : replicatedObjectsList) {
                         Arrays.sort(tuple3s, Comparator.comparingDouble(obj->obj._3()));
                     }
 
@@ -202,8 +202,8 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
                         Algorithms.planeSweepOnY(homeObjects, replicatedObjectsList.get(i), results, radius);
                     }
 
-//                    List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> homeObjects = new ArrayList<>();
-//                    Map<Integer,List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> replicatedObjectsMap = new HashMap<>();
+//                    List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> homeObjects = new ArrayList<>();
+//                    Map<Integer,List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> replicatedObjectsMap = new HashMap<>();
 //
 //                    tup._2.forEach(obj->{
 //                        if(obj._1.equals(tup._1)){
@@ -212,7 +212,7 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
 //                            if(replicatedObjectsMap.containsKey(obj._1)){
 //                                replicatedObjectsMap.get(obj._1).add(obj._2);
 //                            }else{
-//                                List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> replList = new ArrayList<>();
+//                                List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> replList = new ArrayList<>();
 //                                replList.add(obj._2);
 //                                replicatedObjectsMap.put(obj._1, replList);
 //                            }
@@ -226,9 +226,9 @@ public class GridTimeRealsPrunedCorrectnessPlaneSweepX6 {
 //
 //                    planeSweep(homeObjects, homeObjects, results, radius);
 //
-//                    List<Map.Entry<Integer,List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>>> replicatedObjects = new ArrayList<>(replicatedObjectsMap.entrySet());
+//                    List<Map.Entry<Integer,List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>>> replicatedObjects = new ArrayList<>(replicatedObjectsMap.entrySet());
 //
-//                    for (Map.Entry<Integer,List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> tuple3s : replicatedObjects) {
+//                    for (Map.Entry<Integer,List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> tuple3s : replicatedObjects) {
 //                        planeSweep1(homeObjects, tuple3s.getValue(), results, radius);
 //                    }
 

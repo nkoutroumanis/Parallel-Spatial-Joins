@@ -26,9 +26,9 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.SparkSession;
-import scala.Tuple11;
 import scala.Tuple2;
 import scala.Tuple3;
+import scala.Tuple9;
 import scala.reflect.ManifestFactory$;
 
 import java.io.*;
@@ -166,14 +166,14 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
 
             Random random = new Random();
 
-            JavaRDD<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> rddTuplesA = rddTxtFilesA.map((String line) -> {
+            JavaRDD<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> rddTuplesA = rddTxtFilesA.map((String line) -> {
                     String[] elements = line.split("\t");
-                    return new Tuple11<>(elements[0], Double.parseDouble(elements[1]), Double.parseDouble(elements[2]), randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000);
+                return new Tuple9<>(elements[0], Double.parseDouble(elements[1]), Double.parseDouble(elements[2]), randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000);
                 });
 
-            JavaRDD<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> rddTuplesB = rddTxtFilesB.map((String line) -> {
+            JavaRDD<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> rddTuplesB = rddTxtFilesB.map((String line) -> {
                 String[] elements = line.split("\t");
-                return new Tuple11<>(elements[0], Double.parseDouble(elements[1]), Double.parseDouble(elements[2]), randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000);
+                return new Tuple9<>(elements[0], Double.parseDouble(elements[1]), Double.parseDouble(elements[2]), randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000, randomString(random, 8), random.nextDouble()*1000000);
             });
 
 //            if (!(flag == 1 || flag == 2)) {
@@ -199,10 +199,10 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
 //        }
 //            gridBroadcasted.getValue().initialize();
 
-            JavaPairRDD<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> pairRDDA = rddTuplesA.flatMapToPair(new PairFlatMapFunction<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>() {
+            JavaPairRDD<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> pairRDDA = rddTuplesA.flatMapToPair(new PairFlatMapFunction<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>() {
                 @Override
-                public Iterator<Tuple2<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> call(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
-                    List<Tuple2<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>();
+                public Iterator<Tuple2<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> call(Tuple9<String, Double, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
+                    List<Tuple2<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>();
                     int[] cellIds = gridBroadcasted.getValue().getPartitionsATypeInExecutor(tuple._2(), tuple._3());
                     for (int cellId : cellIds) {
                         list.add(new Tuple2<>(cellId, tuple));
@@ -211,10 +211,10 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
                 }
             });
 
-            JavaPairRDD<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> pairRDDB = rddTuplesB.flatMapToPair(new PairFlatMapFunction<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>() {
+            JavaPairRDD<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> pairRDDB = rddTuplesB.flatMapToPair(new PairFlatMapFunction<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>() {
                 @Override
-                public Iterator<Tuple2<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> call(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
-                    List<Tuple2<Integer, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>();
+                public Iterator<Tuple2<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> call(Tuple9<String, Double, Double, String, Double, String, Double, String, Double> tuple) throws Exception {
+                    List<Tuple2<Integer, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> list = new ArrayList<>();
                     int[] cellIds = gridBroadcasted.getValue().getPartitionsBTypeInExecutor(tuple._2(), tuple._3());
                     for (int cellId : cellIds) {
                         list.add(new Tuple2<>(cellId, tuple));
@@ -223,14 +223,14 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
                 }
             });
 
-            long count = pairRDDA.cogroup(pairRDDB,cp).flatMap(new FlatMapFunction<Tuple2<Integer, Tuple2<Iterable<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>, Iterable<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>>>, Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>,Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>>() {
+            long count = pairRDDA.cogroup(pairRDDB,cp).flatMap(new FlatMapFunction<Tuple2<Integer, Tuple2<Iterable<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>, Iterable<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>>>, Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>,Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>>() {
                 @Override
-                 public Iterator<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>,Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> call(Tuple2<Integer, Tuple2<Iterable<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>, Iterable<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>>> tup) throws Exception {
+                 public Iterator<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>,Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> call(Tuple2<Integer, Tuple2<Iterable<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>, Iterable<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>>> tup) throws Exception {
 
                     Grid g = gridBroadcasted.getValue();
                     int nativeObjectsASize=0, nativeObjectsBSize=0, externalObjectsASize=0, externalObjectsBSize=0;
 
-                    for (Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> obj : tup._2._1) {
+                    for (Tuple9<String, Double, Double, String, Double, String, Double, String, Double> obj : tup._2._1) {
                         if(g.getCellId(obj._2(), obj._3()) == tup._1){
                             nativeObjectsASize++;
                         }else{
@@ -238,7 +238,7 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
                         }
                     }
 
-                    for (Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> obj : tup._2._2) {
+                    for (Tuple9<String, Double, Double, String, Double, String, Double, String, Double> obj : tup._2._2) {
                         if(g.getCellId(obj._2(), obj._3()) == tup._1){
                             nativeObjectsBSize++;
                         }else{
@@ -246,18 +246,18 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
                         }
                     }
 
-                    Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] nativeObjectsA = new Tuple11[nativeObjectsASize];
-                    Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[]  nativeObjectsB = new Tuple11[nativeObjectsBSize];
+                    Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] nativeObjectsA = new Tuple9[nativeObjectsASize];
+                    Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[]  nativeObjectsB = new Tuple9[nativeObjectsBSize];
 
-                    Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[]  externalObjectsA = new Tuple11[externalObjectsASize];
-                    Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[]  externalObjectsB = new Tuple11[externalObjectsBSize];
+                    Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[]  externalObjectsA = new Tuple9[externalObjectsASize];
+                    Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[]  externalObjectsB = new Tuple9[externalObjectsBSize];
 
                     nativeObjectsASize=0;
                     nativeObjectsBSize=0;
                     externalObjectsASize=0;
                     externalObjectsBSize=0;
 
-                    for (Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> obj : tup._2._1) {
+                    for (Tuple9<String, Double, Double, String, Double, String, Double, String, Double> obj : tup._2._1) {
                         if(g.getCellId(obj._2(), obj._3()) == tup._1){
                             nativeObjectsA[nativeObjectsASize++]=obj;
                         }else{
@@ -265,7 +265,7 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
                         }
                     }
 
-                    for (Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double> obj : tup._2._2) {
+                    for (Tuple9<String, Double, Double, String, Double, String, Double, String, Double> obj : tup._2._2) {
                         if(g.getCellId(obj._2(), obj._3()) == tup._1){
                             nativeObjectsB[nativeObjectsBSize++]=obj;
                         }else{
@@ -279,7 +279,7 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
                     Arrays.sort(externalObjectsA,Comparator.comparingDouble(obj->obj._3()));
                     Arrays.sort(externalObjectsB,Comparator.comparingDouble(obj->obj._3()));
 
-                    List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results = new ArrayList<>();
+                    List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results = new ArrayList<>();
 
                     Algorithms.planeSweepOnY(nativeObjectsA, nativeObjectsB, results, radius);
                     Algorithms.planeSweepOnY(nativeObjectsA, externalObjectsB, results, radius);
@@ -303,7 +303,7 @@ public class GridTimeRealsPrunedPlaneSweepX6 {
         bw.close();
 
     }
-//    private static void planeSweep(List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> objectsA, List<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>> objectsB, List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results, double radius){
+//    private static void planeSweep(List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> objectsA, List<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>> objectsB, List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results, double radius){
 //        int indexA = 0;
 //        int indexB = 0;
 //
