@@ -1,8 +1,8 @@
 package gr.ds.unipi.self;
 
-import scala.Tuple2;
-import scala.Tuple3;
+import scala.*;
 
+import java.lang.Double;
 import java.util.List;
 
 public class Algorithms {
@@ -365,4 +365,697 @@ public class Algorithms {
         return counter;
     }
 
+    //METHODS FOR TUPLE VAR
+    public static void bruteForceSelf(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsB = objectsA;
+        for (int i = 0; i < objectsA.length-1; i++) {
+            for (int j = i+1; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweepSelfOnY(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results, double radius){
+
+        Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
+
+    public static void planeSweepOnY(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsA, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void bruteForce(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsA, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        for (int i = 0; i < objectsA.length; i++) {
+            for (int j = 0; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweep(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsA, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void planeSweepSelf(Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>, Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>>> results, double radius){
+
+        Tuple11<String, Double, Double, String, Double, String, Double, String, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
+
+
+    public static void bruteForceSelf(Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsB = objectsA;
+        for (int i = 0; i < objectsA.length-1; i++) {
+            for (int j = i+1; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweepSelfOnY(Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results, double radius){
+
+        Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
+
+    public static void planeSweepOnY(Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsA, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void bruteForce(Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsA, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        for (int i = 0; i < objectsA.length; i++) {
+            for (int j = 0; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweep(Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsA, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void planeSweepSelf(Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple9<String, Double, Double, String, Double, String, Double, String, Double>, Tuple9<String, Double, Double, String, Double, String, Double, String, Double>>> results, double radius){
+
+        Tuple9<String, Double, Double, String, Double, String, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
+
+    public static void bruteForceSelf(Tuple7<String, Double, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple7<String, Double, Double, String, Double, String, Double>, Tuple7<String, Double, Double, String, Double, String, Double>>> results, double radius){
+        Tuple7<String, Double, Double, String, Double, String, Double>[] objectsB = objectsA;
+        for (int i = 0; i < objectsA.length-1; i++) {
+            for (int j = i+1; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweepSelfOnY(Tuple7<String, Double, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple7<String, Double, Double, String, Double, String, Double>, Tuple7<String, Double, Double, String, Double, String, Double>>> results, double radius){
+
+        Tuple7<String, Double, Double, String, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
+
+    public static void planeSweepOnY(Tuple7<String, Double, Double, String, Double, String, Double>[] objectsA, Tuple7<String, Double, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple7<String, Double, Double, String, Double, String, Double>, Tuple7<String, Double, Double, String, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void bruteForce(Tuple7<String, Double, Double, String, Double, String, Double>[] objectsA, Tuple7<String, Double, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple7<String, Double, Double, String, Double, String, Double>, Tuple7<String, Double, Double, String, Double, String, Double>>> results, double radius){
+        for (int i = 0; i < objectsA.length; i++) {
+            for (int j = 0; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweep(Tuple7<String, Double, Double, String, Double, String, Double>[] objectsA, Tuple7<String, Double, Double, String, Double, String, Double>[] objectsB, List<Tuple2<Tuple7<String, Double, Double, String, Double, String, Double>, Tuple7<String, Double, Double, String, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void planeSweepSelf(Tuple7<String, Double, Double, String, Double, String, Double>[] objectsA, List<Tuple2<Tuple7<String, Double, Double, String, Double, String, Double>, Tuple7<String, Double, Double, String, Double, String, Double>>> results, double radius){
+
+        Tuple7<String, Double, Double, String, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
+
+    public static void bruteForceSelf(Tuple5<String, Double, Double, String, Double>[] objectsA, List<Tuple2<Tuple5<String, Double, Double, String, Double>, Tuple5<String, Double, Double, String, Double>>> results, double radius){
+        Tuple5<String, Double, Double, String, Double>[] objectsB = objectsA;
+        for (int i = 0; i < objectsA.length-1; i++) {
+            for (int j = i+1; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweepSelfOnY(Tuple5<String, Double, Double, String, Double>[] objectsA, List<Tuple2<Tuple5<String, Double, Double, String, Double>, Tuple5<String, Double, Double, String, Double>>> results, double radius){
+
+        Tuple5<String, Double, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
+
+    public static void planeSweepOnY(Tuple5<String, Double, Double, String, Double>[] objectsA, Tuple5<String, Double, Double, String, Double>[] objectsB, List<Tuple2<Tuple5<String, Double, Double, String, Double>, Tuple5<String, Double, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._3()-(radius/2)<objectsB[indexB]._3()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._3()+(radius/2)>=objectsB[innerIndexB]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._3()+(radius/2)>=objectsA[innerIndexA]._3()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void bruteForce(Tuple5<String, Double, Double, String, Double>[] objectsA, Tuple5<String, Double, Double, String, Double>[] objectsB, List<Tuple2<Tuple5<String, Double, Double, String, Double>, Tuple5<String, Double, Double, String, Double>>> results, double radius){
+        for (int i = 0; i < objectsA.length; i++) {
+            for (int j = 0; j < objectsB.length; j++) {
+                if((Math.pow((objectsA[i]._2() - objectsB[j]._2()), 2) + Math.pow((objectsA[i]._3()- objectsB[j]._3()), 2) <= Math.pow(radius, 2))){
+                    results.add(Tuple2.apply(objectsA[i], objectsB[j]));
+                }
+            }
+        }
+    }
+
+    public static void planeSweep(Tuple5<String, Double, Double, String, Double>[] objectsA, Tuple5<String, Double, Double, String, Double>[] objectsB, List<Tuple2<Tuple5<String, Double, Double, String, Double>, Tuple5<String, Double, Double, String, Double>>> results, double radius){
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+                indexA++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if((Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+            }
+        }
+    }
+
+    public static void planeSweepSelf(Tuple5<String, Double, Double, String, Double>[] objectsA, List<Tuple2<Tuple5<String, Double, Double, String, Double>, Tuple5<String, Double, Double, String, Double>>> results, double radius){
+
+        Tuple5<String, Double, Double, String, Double>[] objectsB = objectsA;
+
+        int indexA = 0;
+        int indexB = 0;
+
+        while(indexA<objectsA.length && indexB<objectsB.length){
+            if(objectsA[indexA]._2()-(radius/2)<objectsB[indexB]._2()-(radius/2)){
+
+                int innerIndexB = indexB;
+                while(innerIndexB<objectsB.length && (objectsA[indexA]._2()+(radius/2)>=objectsB[innerIndexB]._2()-(radius/2))){
+
+                    if(indexA!=innerIndexB && (Math.pow((objectsA[indexA]._2() - objectsB[innerIndexB]._2()), 2) + Math.pow((objectsA[indexA]._3()- objectsB[innerIndexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(indexA)._3()-objectsB.get(innerIndexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[indexA], objectsB[innerIndexB]));
+                    }
+                    innerIndexB++;
+                }
+
+                indexA++;
+
+                //extra command for self join
+                indexB++;
+            }else{
+
+                int innerIndexA = indexA;
+                while(innerIndexA<objectsA.length && (objectsB[indexB]._2()+(radius/2)>=objectsA[innerIndexA]._2()-(radius/2))){
+
+                    if(innerIndexA!=indexB && (Math.pow((objectsA[innerIndexA]._2() - objectsB[indexB]._2()), 2) + Math.pow((objectsA[innerIndexA]._3()- objectsB[indexB]._3()), 2) <= Math.pow(radius, 2))){
+//                                 if(objectsA.get(innerIndexA)._3()-objectsB.get(indexB)._3()<=(radius/2)){
+                        results.add(Tuple2.apply(objectsA[innerIndexA], objectsB[indexB]));
+                    }
+                    innerIndexA++;
+                }
+                indexB++;
+
+                //extra command for self join
+                indexA++;
+            }
+        }
+    }
 }

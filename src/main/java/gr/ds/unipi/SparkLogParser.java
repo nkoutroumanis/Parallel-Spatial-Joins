@@ -24,7 +24,6 @@ public class SparkLogParser {
             long completedTime = 0;
 
             while((line = br.readLine())!=null){
-
                 if(line.contains("\"SparkListenerStageCompleted\"")){
                     int index = line.indexOf("\"Submission Time\":");
                     String line1 = line.substring(index);
@@ -36,6 +35,8 @@ public class SparkLogParser {
 
                     times.add(Math.round((completedTime-submissionTime)/1000.0));
                 }
+                if(line.contains("\"Submission Time\":")){}
+
             }
             String result = times.stream()
                     .map(String::valueOf) // Convert each Long to String

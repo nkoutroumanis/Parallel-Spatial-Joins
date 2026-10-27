@@ -3,7 +3,6 @@ package gr.ds.unipi.processing;
 import gr.ds.unipi.Algorithms;
 import gr.ds.unipi.TypeSet;
 import gr.ds.unipi.rdd.CustomPartitioner;
-import gr.ds.unipi.rdd.LPTPartitioner;
 import gr.ds.unipi.rdd.LPTPartitionerBr;
 import gr.ds.unipi.shapes.Point;
 import gr.ds.unipi.shapes.Position;

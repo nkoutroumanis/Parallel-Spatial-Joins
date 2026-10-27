@@ -25,6 +25,7 @@ public class LPTPartitionerBr extends Partitioner {
         System.out.println(sortedEntries.get(sortedEntries.size()-1));
         System.out.println(sortedEntries.get(0));
 
+        System.out.println("OK1");
         for (int i = 0; i < sortedEntries.size(); i++) {
                 int index = getIndexOfMin(partitionsCosts);
                 partitionsCosts[index] = partitionsCosts[index] + sortedEntries.get(i).getValue();

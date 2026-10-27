@@ -1,0 +1,22 @@
+
+for i in 3 6 9; do
+    for j in $(seq 1 1 5); do
+      spark-submit --class gr.ds.unipi.epsilongrid.GridTimeDistRealsBruteForce --master yarn --deploy-mode client --conf spark.yarn.archive="hdfs://node13:9000/user/spark-jars.tar.gz" --executor-memory 4608m --executor-cores 2 --driver-memory 6g --num-executors ${i} --conf spark.network.timeout=1000000s --conf spark.shuffle.io.maxRetries=10 --conf spark.kryoserializer.buffer.max=2047m --conf "spark.executor.extraJavaOptions=-Xms4608m" --conf "spark.driver.extraJavaOptions=-Xms6g" --conf spark.executor.memoryOverhead=512m ~/Spatial-Joins-1.0-SNAPSHOT.jar hdfs://node13:9000/user/user/synth-skewed/pruned/ 0.006 datasetA200000000 datasetB200000000 960
+      spark-submit --class gr.ds.unipi.twoEpsilongrid.GridTimeDistRealsPlaneSweep --master yarn --deploy-mode client --conf spark.yarn.archive="hdfs://node13:9000/user/spark-jars.tar.gz" --executor-memory 4608m --executor-cores 2 --driver-memory 6g --num-executors ${i} --conf spark.network.timeout=1000000s --conf spark.shuffle.io.maxRetries=10 --conf spark.kryoserializer.buffer.max=2047m --conf "spark.executor.extraJavaOptions=-Xms4608m" --conf "spark.driver.extraJavaOptions=-Xms6g" --conf spark.executor.memoryOverhead=512m ~/Spatial-Joins-1.0-SNAPSHOT.jar hdfs://node13:9000/user/user/synth-skewed/pruned/ 0.006 datasetA200000000 datasetB200000000 960
+      spark-submit --class gr.ds.unipi.rdd.GridTimeRealsPrunedPlaneSweep --master yarn --deploy-mode client --conf spark.yarn.archive="hdfs://node13:9000/user/spark-jars.tar.gz" --executor-memory 4608m --executor-cores 2 --driver-memory 6g --num-executors ${i} --conf spark.network.timeout=1000000s --conf spark.shuffle.io.maxRetries=10 --conf spark.kryoserializer.buffer.max=2047m --conf "spark.executor.extraJavaOptions=-Xms4608m" --conf "spark.driver.extraJavaOptions=-Xms6g" --conf spark.executor.memoryOverhead=512m ~/Spatial-Joins-1.0-SNAPSHOT.jar hdfs://node13:9000/user/user/synth-skewed/pruned/ 0.006 4 datasetA200000000 datasetB200000000 960 DIAG_PR 0.001 LPT1
+      spark-submit --class gr.ds.unipi.processing.GridTimeRealsPrunedPlaneSweepV --master yarn --deploy-mode client --conf spark.yarn.archive="hdfs://node13:9000/user/spark-jars.tar.gz" --executor-memory 4608m --executor-cores 2 --driver-memory 6g --num-executors ${i} --conf spark.network.timeout=1000000s --conf spark.shuffle.io.maxRetries=10 --conf spark.kryoserializer.buffer.max=2047m --conf "spark.executor.extraJavaOptions=-Xms4608m" --conf "spark.driver.extraJavaOptions=-Xms6g" --conf spark.executor.memoryOverhead=512m ~/Spatial-Joins-1.0-SNAPSHOT.jar hdfs://node13:9000/user/user/synth-skewed/pruned/ 0.006 datasetA200000000 datasetB200000000 0.001 960 LPT1
+      if [ "$i" != "0.012" ]; then
+        spark-submit --class gr.ds.unipi.rdd.variant.stripes.GridTimeRealsPrunedPlaneSweepX  --master yarn --deploy-mode client --conf spark.yarn.archive="hdfs://node13:9000/user/spark-jars.tar.gz" --executor-memory 4608m --executor-cores 2 --driver-memory 6g --num-executors ${i} --conf spark.network.timeout=1000000s --conf spark.shuffle.io.maxRetries=10 --conf spark.kryoserializer.buffer.max=2047m --conf "spark.executor.extraJavaOptions=-Xms4608m" --conf "spark.driver.extraJavaOptions=-Xms6g" --conf spark.executor.memoryOverhead=512m ~/Spatial-Joins-1.0-SNAPSHOT.jar hdfs://node13:9000/user/user/synth-skewed/pruned/ 0.006 4 datasetA200000000 datasetB200000000 960 DIAG_PR 0.001 LPT1
+      fi
+      spark-submit --class gr.ds.unipi.sedona.DistanceJoinReal --master yarn --deploy-mode client  --jars=./libSedona/* --executor-memory 4608m --executor-cores 2 --driver-memory 6g --num-executors ${i} --conf spark.network.timeout=1000000s --conf spark.shuffle.io.maxRetries=10 --conf spark.kryoserializer.buffer.max=2047m --conf "spark.executor.extraJavaOptions=-Xms4608m" --conf "spark.driver.extraJavaOptions=-Xms6g" --conf spark.executor.memoryOverhead=512m ~/Spatial-Joins-1.0-SNAPSHOT.jar hdfs://node13:9000/user/user/synth-skewed/pruned/ 0.006 datasetA200000000 datasetB200000000 200000000 200000000 960
+      ./yarnState.sh || exit 1
+    done
+done
+
+
+
+
+
+
+
+
